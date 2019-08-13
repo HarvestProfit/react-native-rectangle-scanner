@@ -117,6 +117,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
     private int numberOfRectangles = 15;
     private Boolean enableTorch = false;
     public String overlayColor = null;
+    public Boolean saveOnDevice = false;
     private View blinkView = null;
     private View mView = null;
     private boolean manualCapture = false;
@@ -177,6 +178,10 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
 
     public void setOverlayColor(String rgbaColor) {
         this.overlayColor = rgbaColor;
+    }
+
+    public void setSaveOnDevice(Boolean saveOnDevice) {
+        this.saveOnDevice = saveOnDevice;
     }
 
     public void setDetectionCountBeforeCapture(int numberOfRectangles) {
@@ -653,12 +658,13 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         boolean isIntent = false;
         Uri fileUri = null;
         String folderName = "documents";
-        File folder = new File(Environment.getExternalStorageDirectory().toString() + "/" + folderName);
+        String folderDir = this.saveOnDevice ? Environment.getExternalStorageDirectory().toString() : this.mContext.getCacheDir().toString();
+        File folder = new File( folderDir + "/" + folderName);
         if (!folder.exists()) {
             folder.mkdirs();
             Log.d(TAG, "wrote: created folder " + folder.getPath());
         }
-        fileName = Environment.getExternalStorageDirectory().toString() + "/" + folderName + "/" + UUID.randomUUID()
+        fileName = folderDir + "/" + folderName + "/" + UUID.randomUUID()
                 + ".jpg";
 
         Mat endDoc = new Mat(Double.valueOf(doc.size().width).intValue(), Double.valueOf(doc.size().height).intValue(),
@@ -733,7 +739,9 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             mActivity.finish();
         } else {
             animateDocument(fileName, scannedDocument);
-            addImageToGallery(fileName, mContext);
+            if (this.saveOnDevice) {
+                addImageToGallery(fileName, mContext);
+            }
         }
 
         // Record goal "PictureTaken"

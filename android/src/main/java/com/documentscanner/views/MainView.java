@@ -76,6 +76,10 @@ public class MainView extends FrameLayout {
         view.setOverlayColor(rgbaColor);
     }
 
+    public void setSaveOnDevice(Boolean saveOnDevice) {
+        view.setSaveOnDevice(saveOnDevice);
+    }
+
     public void setBrightness(double brightness) {
         view.setBrightness(brightness);
     }

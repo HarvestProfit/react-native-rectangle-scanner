@@ -65,6 +65,11 @@ public class DocumentScannerViewManager extends ViewGroupManager<MainView> {
         view.setOverlayColor(rgbaColor);
     }
 
+    @ReactProp(name = "saveOnDevice", defaultBoolean = false)
+    public void setSaveOnDevice(MainView view, Boolean saveOnDevice) {
+        view.setSaveOnDevice(saveOnDevice);
+    }
+
     @ReactProp(name = "detectionCountBeforeCapture", defaultInt = 15)
     public void setDetectionCountBeforeCapture(MainView view, int numberOfRectangles) {
         view.setDetectionCountBeforeCapture(numberOfRectangles);
