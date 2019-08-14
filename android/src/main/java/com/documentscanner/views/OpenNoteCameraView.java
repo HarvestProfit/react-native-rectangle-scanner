@@ -987,7 +987,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
 
         setImageProcessorBusy(true);
         sendImageProcessorMessage("pictureTaken", mat);
-
+        camera.cancelAutoFocus();
         safeToTakePicture = true;
 
     }
