@@ -67,6 +67,7 @@
     "eslint-plugin-standard": "^4.0.0",
     "husky": "^2.4.1",
     "jest": "^24.8.0",
+    "lint-staged": "^9.2.1",
     "prettier": "^1.18.2",
     "react": "16.8.3",
     "react-dom": "16.8.3",
@@ -81,8 +82,18 @@
   "husky": {
     "hooks": {
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
-      "pre-commit": "yarn lint && yarn typescript"
+      "pre-commit": "lint-staged"
     }
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "yarn eslint --fix",
+      "git add"
+    ],
+    "*.java": [
+      "cd android && ./graldew spotlessApply",
+      "git add"
+    ]
   },
   "jest": {
     "preset": "react-native",
