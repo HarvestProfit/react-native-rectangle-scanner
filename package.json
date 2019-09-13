@@ -1,29 +1,116 @@
 {
-  "name": "react-native-document-scanner",
-  "description": "Scan documents, automatic border detection, automatic crop",
+  "name": "@woonivers/react-native-document-scanner",
   "version": "1.4.2",
-  "main": "index.js",
+  "description": "Scan documents, automatic border detection, automatic crop",
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "/android",
+    "!/android/build",
+    "/ios",
+    "/src",
+    "/lib",
+    "/*.podspec"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "typescript": "tsc --noEmit",
+    "lint": "eslint --ext .js,.ts,.tsx .",
+    "release": "release-it",
+    "example": "yarn --cwd example",
+    "bootstrap": "yarn example && yarn",
+    "prepare": "bob build"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Michaelvilleneuve/react-native-document-scanner"
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "react-native",
+    "react-native-component",
     "scanner",
-    "ios"
+    "ios",
+    "android",
+    "camera"
   ],
-  "author": "Michaël Villeneuve",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Woonivers/react-native-document-scanner"
+  },
+  "author": "Woonivers (https://woonivers.com)",
   "license": "MIT",
-  "peerDependencies": {
-    "react-native": "0.49.3"
+  "bugs": {
+    "url": "https://github.com/Woonivers/react-native-document-scanner/issues"
   },
-  "dependencies": {
-    "react": "16.0.0-beta.5"
-  },
+  "homepage": "https://github.com/Woonivers/react-native-document-scanner#readme",
   "devDependencies": {
-    "@babel/runtime": "^7.5.5"
+    "@babel/runtime": "^7.5.5",
+    "@commitlint/config-conventional": "^8.0.0",
+    "@react-native-community/bob": "^0.4.1",
+    "@release-it/conventional-changelog": "^1.1.0",
+    "@types/react": "^16.8.20",
+    "@types/react-native": "^0.57.63",
+    "@typescript-eslint/eslint-plugin": "^1.1.0",
+    "@typescript-eslint/parser": "^1.10.2",
+    "babel-jest": "^24.8.0",
+    "babel-preset-react-native": "^4.0.0",
+    "commitlint": "^8.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^3.6.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.15.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-react": "^7.12.4",
+    "eslint-plugin-react-hooks": "^1.6.1",
+    "eslint-plugin-react-native": "^3.6.0",
+    "eslint-plugin-simple-import-sort": "^4.0.0",
+    "eslint-plugin-standard": "^4.0.0",
+    "husky": "^2.4.1",
+    "jest": "^24.8.0",
+    "lint-staged": "^9.2.1",
+    "prettier": "^1.18.2",
+    "react": "16.8.3",
+    "react-dom": "16.8.3",
+    "react-native": "~0.59.8",
+    "release-it": "^12.3.0",
+    "typescript": "^3.5.2"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "yarn eslint --fix",
+      "git add"
+    ],
+    "*.java": [
+      "cd android && ./graldew spotlessApply",
+      "git add"
+    ]
+  },
+  "jest": {
+    "preset": "react-native",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/example/node_modules",
+      "<rootDir>/lib/"
+    ]
+  },
+  "@react-native-community/bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "module",
+      "typescript"
+    ],
+    "files": [
+      "src/"
+    ]
   }
 }
