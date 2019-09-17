@@ -37,7 +37,6 @@ export default function App() {
         quality={0.5}
         detectionCountBeforeCapture={5}
         detectionRefreshRateInMS={50}
-        onPermissionsDenied={() => console.log("Permissions Denied")}
       />
       <TouchableOpacity onPress={handleOnPress} style={styles.button}>
         <Text style={styles.buttonText}>Take picture</Text>
