@@ -1,0 +1,7 @@
+rootProject.name = 'example'
+include ':@woonivers_react-native-document-scanner'
+project(':@woonivers_react-native-document-scanner').projectDir = new File(rootProject.projectDir, '../../android')
+include ':openCVLibrary310'
+project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../../android/openCVLibrary310')
+
+include ':app'
