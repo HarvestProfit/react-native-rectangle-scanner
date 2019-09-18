@@ -1,6 +1,6 @@
 {
   "name": "@woonivers/react-native-document-scanner",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Scan documents, automatic border detection, automatic crop",
   "main": "lib/module/index.js",
   "types": "lib/typescript/index.d.ts",
