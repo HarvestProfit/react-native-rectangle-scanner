@@ -56,6 +56,7 @@ interface PdfScannerProps {
 
 class PdfScanner extends React.Component<PdfScannerProps> {
   sendOnPictureTakenEvent (event: any) {
+    if (!this.props.onPictureTaken) return null
     return this.props.onPictureTaken(event.nativeEvent)
   }
 
@@ -74,16 +75,16 @@ class PdfScanner extends React.Component<PdfScannerProps> {
   componentWillMount () {
     if (Platform.OS === 'android') {
       const { onPictureTaken, onProcessing } = this.props
-      DeviceEventEmitter.addListener('onPictureTaken', onPictureTaken)
-      DeviceEventEmitter.addListener('onProcessingChange', onProcessing)
+      if (onPictureTaken) DeviceEventEmitter.addListener('onPictureTaken', onPictureTaken)
+      if (onProcessing) DeviceEventEmitter.addListener('onProcessingChange', onProcessing)
     }
   }
 
   componentWillUnmount () {
     if (Platform.OS === 'android') {
       const { onPictureTaken, onProcessing } = this.props
-      DeviceEventEmitter.removeListener('onPictureTaken', onPictureTaken)
-      DeviceEventEmitter.removeListener('onProcessingChange', onProcessing)
+      if (onPictureTaken) DeviceEventEmitter.removeListener('onPictureTaken', onPictureTaken)
+      if (onProcessing) DeviceEventEmitter.removeListener('onProcessingChange', onProcessing)
     }
   }
 
