@@ -46,7 +46,7 @@ If you do not have it already in your project, you must link openCV in your `set
 
 ```java
 include ':openCVLibrary310'
-project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules/react-native-document-scanner/android/openCVLibrary310')
+project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules/@woonivers/react-native-document-scanner/android/openCVLibrary310')
 ```
 
 #### In android/app/src/main/AndroidManifest.xml
@@ -72,10 +72,10 @@ Add Camera permissions request:
 ## Usage
 
 ```javascript
-import React, { Component } from "react";
-import { View, Image } from "react-native";
+import React, { Component } from "react"
+import { View, Image } from "react-native"
 
-import DocumentScanner from "react-native-document-scanner";
+import DocumentScanner from "react-native-document-scanner"
 
 class YourComponent extends Component {
   render() {
@@ -88,7 +88,7 @@ class YourComponent extends Component {
             this.setState({
               image: data.croppedImage,
               initialImage: data.initialImage,
-              rectangleCoordinates: data.rectangleCoordinates
+              rectangleCoordinates: data.rectangleCoordinates,
             })
           }
           overlayColor="rgba(255,130,0, 0.7)"
@@ -108,7 +108,7 @@ class YourComponent extends Component {
           resizeMode="contain"
         />
       </View>
-    );
+    )
   }
 }
 ```
@@ -142,7 +142,7 @@ class YourComponent extends Component {
 - Then call :
 
 ```javascript
-this.scanner.capture();
+this.scanner.capture()
 ```
 
 ## Each rectangle detection (iOS only)

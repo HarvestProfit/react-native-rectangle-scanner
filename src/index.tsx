@@ -1,25 +1,57 @@
 import React from 'react'
-import { DeviceEventEmitter, NativeModules, Platform, requireNativeComponent } from 'react-native'
+import {
+  DeviceEventEmitter,
+  NativeModules,
+  Platform,
+  requireNativeComponent,
+  ViewStyle
+} from 'react-native'
 
 const RNPdfScanner = requireNativeComponent('RNPdfScanner')
 const CameraManager = NativeModules.RNPdfScannerManager || {}
 
+export interface PictureTaken {
+  rectangleCoordinates?: object;
+  croppedImage: string;
+  initialImage: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * TODO: Change to something like this
+interface PictureTaken {
+  uri: string;
+  base64?: string;
+  width?: number; // modify to get it
+  height?: number; // modify to get it
+  rectangleCoordinates?: object;
+  initial: {
+    uri: string;
+    base64?: string;
+    width: number; // modify to get it
+    height: number; // modify to get it
+  };
+}
+ */
+
 interface PdfScannerProps {
-  onPictureTaken: (event: any) => void;
-  onRectangleDetect: (event: any) => void;
-  onProcessing: () => void;
-  quality: number;
-  overlayColor: number | string;
-  enableTorch: boolean;
-  useFrontCam: boolean;
-  saturation: number;
-  brightness: number;
-  contrast: number;
-  detectionCountBeforeCapture: number;
-  detectionRefreshRateInMS: number;
-  documentAnimation: boolean;
-  noGrayScale: boolean;
-  manualOnly: boolean;
+  onPictureTaken?: (event: any) => void;
+  onRectangleDetect?: (event: any) => void;
+  onProcessing?: () => void;
+  quality?: number;
+  overlayColor?: number | string;
+  enableTorch?: boolean;
+  useFrontCam?: boolean;
+  saturation?: number;
+  brightness?: number;
+  contrast?: number;
+  detectionCountBeforeCapture?: number;
+  detectionRefreshRateInMS?: number;
+  documentAnimation?: boolean;
+  noGrayScale?: boolean;
+  manualOnly?: boolean;
+  style?: ViewStyle;
 }
 
 class PdfScanner extends React.Component<PdfScannerProps> {
