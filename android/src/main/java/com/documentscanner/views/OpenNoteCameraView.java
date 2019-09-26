@@ -16,6 +16,7 @@ import android.media.AudioManager;
 import android.media.ExifInterface;
 import android.media.MediaActionSound;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -237,22 +238,24 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
 
         Display display = mActivity.getWindowManager().getDefaultDisplay();
         android.graphics.Point size = new android.graphics.Point();
-        display.getRealSize(size);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            display.getRealSize(size);
+        }
 
         BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(context) {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.d(TAG, "SUCCESS init openCV: " + status);
-                    // System.loadLibrary("ndklibrarysample");
-                    enableCameraView();
-                }
+                    case LoaderCallbackInterface.SUCCESS: {
+                        Log.d(TAG, "SUCCESS init openCV: " + status);
+                        // System.loadLibrary("ndklibrarysample");
+                        enableCameraView();
+                    }
                     break;
-                default: {
-                    Log.d(TAG, "ERROR init Opencv: " + status);
-                    super.onManagerConnected(status);
-                }
+                    default: {
+                        Log.d(TAG, "ERROR init Opencv: " + status);
+                        super.onManagerConnected(status);
+                    }
                     break;
                 }
             }
@@ -281,14 +284,9 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
     }
 
     private boolean imageProcessorBusy = true;
-    private boolean attemptToFocus = false;
 
     public void setImageProcessorBusy(boolean imageProcessorBusy) {
         this.imageProcessorBusy = imageProcessorBusy;
-    }
-
-    public void setAttemptToFocus(boolean attemptToFocus) {
-        this.attemptToFocus = attemptToFocus;
     }
 
     public boolean isFocused() {
@@ -391,7 +389,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         Camera.Parameters param;
         param = mCamera.getParameters();
 
-        Camera.Size pSize = getMaxPreviewResolution();
+        Size pSize = getMaxPreviewResolution();
         param.setPreviewSize(pSize.width, pSize.height);
         param.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
         float previewRatio = (float) pSize.width / pSize.height;
@@ -399,7 +397,9 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         Display display = mActivity.getWindowManager().getDefaultDisplay();
         // Display display =
         android.graphics.Point size = new android.graphics.Point();
-        display.getRealSize(size);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            display.getRealSize(size);
+        }
 
         int displayWidth = Math.min(size.y, size.x);
         int displayHeight = Math.max(size.y, size.x);
@@ -420,7 +420,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         int hotAreaWidth = displayWidth / 4;
         int hotAreaHeight = previewHeight / 2 - hotAreaWidth;
 
-        Camera.Size maxRes = getMaxPictureResolution(previewRatio);
+        Size maxRes = getMaxPictureResolution(previewRatio);
         if (maxRes != null) {
             param.setPictureSize(maxRes.width, maxRes.height);
             Log.d(TAG, "max supported picture resolution: " + maxRes.width + "x" + maxRes.height);
@@ -548,14 +548,14 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
     public void blinkScreenAndShutterSound() {
         AudioManager audio = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         switch (audio.getRingerMode()) {
-        case AudioManager.RINGER_MODE_NORMAL:
-            MediaActionSound sound = new MediaActionSound();
-            sound.play(MediaActionSound.SHUTTER_CLICK);
-            break;
-        case AudioManager.RINGER_MODE_SILENT:
-            break;
-        case AudioManager.RINGER_MODE_VIBRATE:
-            break;
+            case AudioManager.RINGER_MODE_NORMAL:
+                MediaActionSound sound = new MediaActionSound();
+                sound.play(MediaActionSound.SHUTTER_CLICK);
+                break;
+            case AudioManager.RINGER_MODE_SILENT:
+                break;
+            case AudioManager.RINGER_MODE_VIBRATE:
+                break;
         }
     }
 
@@ -597,25 +597,12 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         });
     }
 
-    public boolean requestManualPicture() {
-        this.blinkScreenAndShutterSound();
+    public void requestManualPicture() {
         this.waitSpinnerVisible();
-
-        if (safeToTakePicture) {
-
-            safeToTakePicture = false;
-
-            try {
-                mCamera.takePicture(null, null, pCallback);
-            } catch (Exception e) {
-                this.waitSpinnerInvisible();
-            }
-            return true;
-        }
-        return false;
+        this.requestPicture();
     }
 
-    public boolean requestPicture() {
+    public void requestPicture() {
         PackageManager pm = mActivity.getPackageManager();
         if (safeToTakePicture) {
 
@@ -626,31 +613,27 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
                     mCamera.autoFocus(new Camera.AutoFocusCallback() {
                         @Override
                         public void onAutoFocus(boolean success, Camera camera) {
+                            Log.d(TAG, "onAutoFocusSuccess: " + success);
                             if (success) {
-                                mCamera.takePicture(null, null, pCallback);
-                                blinkScreen();
-                                blinkScreenAndShutterSound();
-                            }
-                            if (attemptToFocus) {
-                                return;
+                                takePicture();
                             } else {
-                                attemptToFocus = true;
+                                onPictureFailed();
                             }
                         }
                     });
                 } else {
-                    mCamera.takePicture(null, null, pCallback);
-                    blinkScreen();
-                    blinkScreenAndShutterSound();
+                    takePicture();
                 }
             } catch (Exception e) {
-                waitSpinnerInvisible();
-            } finally {
-                waitSpinnerInvisible();
+                onPictureFailed();
             }
-            return true;
         }
-        return false;
+    }
+
+    private void takePicture() {
+        mCamera.takePicture(null, null, pCallback);
+        blinkScreen();
+        blinkScreenAndShutterSound();
     }
 
     public String saveToDirectory(Mat doc) {
@@ -792,7 +775,9 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
 
             Display display = mActivity.getWindowManager().getDefaultDisplay();
             android.graphics.Point size = new android.graphics.Point();
-            display.getRealSize(size);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                display.getRealSize(size);
+            }
 
             int width = Math.min(size.x, size.y);
             int height = Math.max(size.x, size.y);
@@ -864,7 +849,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
                 public void onAnimationEnd(Animation animation) {
                     imageView.setVisibility(View.INVISIBLE);
                     imageView.setImageBitmap(null);
-                    OpenNoteCameraView.AnimationRunnable.this.bitmap.recycle();
+                    AnimationRunnable.this.bitmap.recycle();
                 }
 
                 @Override
@@ -989,6 +974,14 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         sendImageProcessorMessage("pictureTaken", mat);
         camera.cancelAutoFocus();
         safeToTakePicture = true;
+        waitSpinnerInvisible();
+
+    }
+
+    public void onPictureFailed() {
+        mCamera.cancelAutoFocus();
+        safeToTakePicture = true;
+        waitSpinnerInvisible();
 
     }
 

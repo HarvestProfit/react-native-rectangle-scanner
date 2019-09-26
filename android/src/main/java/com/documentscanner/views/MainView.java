@@ -44,10 +44,6 @@ public class MainView extends FrameLayout {
         }
     }
 
-    public void setDocumentAnimation(boolean animate) {
-        view.setDocumentAnimation(animate);
-    }
-
     public void setDetectionCountBeforeCapture(int numberOfRectangles) {
         view.setDetectionCountBeforeCapture(numberOfRectangles);
     }

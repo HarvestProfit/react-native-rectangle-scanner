@@ -57,7 +57,7 @@ public class DocumentScannerViewManager extends ViewGroupManager<MainView> {
 
     @ReactProp(name = "documentAnimation", defaultBoolean = false)
     public void setDocumentAnimation(MainView view, boolean animate) {
-        view.setDocumentAnimation(animate);
+        // TODO: What is documentAnimation?
     }
 
     @ReactProp(name = "overlayColor")
