@@ -42,13 +42,11 @@ jobs:
       - run:
           name: Run Build
           command: yarn build
-
       - run:
           name: Publish to NPM
           command: yarn ci:publish
 
 workflows:
-  version: 2
   test_and_release:
     jobs:
       - setup:
