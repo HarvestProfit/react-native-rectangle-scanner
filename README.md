@@ -24,9 +24,9 @@ Features :
 
 Use version >=1.4.1 if you are using react-native 0.48+
 
-`$ npm install react-native-document-scanner --save`
+`$ npm install @woonivers/react-native-document-scanner --save`
 
-`$ react-native link react-native-document-scanner`
+`$ react-native link @woonivers/react-native-document-scanner`
 
 Edit the `info.plist` file in XCode and add the following permission : `NSCameraUsageDescription`
 
@@ -37,7 +37,7 @@ Remember, this library uses your device camera, you can't run it on a simulator.
 If you want to use Cocoapods insteads of `react-native link`, add the following to your Podfile
 
 ```
-  pod 'RNPdfScanner', :path => '../node_modules/react-native-document-scanner/ios'
+  pod 'RNPdfScanner', :path => '../node_modules/@woonivers/react-native-document-scanner/ios'
 ```
 
 ### Android Only
