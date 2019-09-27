@@ -58,6 +58,7 @@ workflows:
       - publish:
           requires:
             - tests
+          filters:
             branches:
               only:
                 - master
