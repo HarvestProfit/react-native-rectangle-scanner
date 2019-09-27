@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "ci:test": "jest",
+    "ci:test": "jest --passWithNoTests",
     "typescript": "tsc --noEmit",
     "lint": "eslint --ext .js,.ts,.tsx .",
     "release": "release-it",
