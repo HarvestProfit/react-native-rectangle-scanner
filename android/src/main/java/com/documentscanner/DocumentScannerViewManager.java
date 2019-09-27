@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 
 public class DocumentScannerViewManager extends ViewGroupManager<MainView> {
 
-    public static final String REACT_CLASS = "RNPdfScanner";
+    private static final String REACT_CLASS = "RNPdfScanner";
     private MainView view = null;
 
     @Override
@@ -93,11 +93,6 @@ public class DocumentScannerViewManager extends ViewGroupManager<MainView> {
     @ReactProp(name = "contrast", defaultDouble = 1)
     public void setContrast(MainView view, double contrast) {
         view.setContrast(contrast);
-    }
-
-    @ReactProp(name = "noGrayScale", defaultBoolean = false)
-    public void setRemoveGrayScale(MainView view, boolean bw) {
-        view.setRemoveGrayScale(bw);
     }
 
 }
