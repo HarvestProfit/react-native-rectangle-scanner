@@ -47,9 +47,10 @@ jobs:
           command: yarn ci:publish
 
 workflows:
+  version: 2
   test_and_release:
     jobs:
-      - setup:
+      - setup
       - tests:
           requires:
             - setup
