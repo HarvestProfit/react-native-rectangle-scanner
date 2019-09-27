@@ -2,54 +2,35 @@ package com.documentscanner.views;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
-import android.hardware.display.DisplayManager;
 import android.media.AudioManager;
-import android.media.ExifInterface;
 import android.media.MediaActionSound;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
-import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.animation.AnimationSet;
-import android.view.animation.ScaleAnimation;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
-import com.documentscanner.BuildConfig;
 import com.documentscanner.ImageProcessor;
 import com.documentscanner.R;
 import com.documentscanner.helpers.CustomOpenCVLoader;
 import com.documentscanner.helpers.OpenNoteMessage;
 import com.documentscanner.helpers.PreviewFrame;
 import com.documentscanner.helpers.ScannedDocument;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 
@@ -60,69 +41,45 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import java.io.File;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import java.io.ByteArrayOutputStream;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.util.Base64;
-
 import static com.documentscanner.helpers.Utils.addImageToGallery;
-import static com.documentscanner.helpers.Utils.decodeSampledBitmapFromUri;
 
 public class OpenNoteCameraView extends JavaCameraView implements PictureCallback {
 
     private static final String TAG = "JavaCameraView";
-    private String mPictureFileName;
     private Context mContext;
-    SurfaceView mSurfaceView;
+    private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
     private HUDCanvasView mHud;
-    private boolean mBugRotate = false;
+    private final boolean mBugRotate = false;
     private ImageProcessor mImageProcessor;
     private boolean mFocused;
     private boolean safeToTakePicture;
     private Activity mActivity;
     private boolean mFlashMode = false;
-    private SharedPreferences mSharedPref;
-    private SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-    private boolean autoMode = true;
     private HandlerThread mImageThread;
     private View mWaitSpinner;
     private PictureCallback pCallback;
-    private boolean scanClicked = false;
-    private boolean mVisible;
 
-    private boolean documentAnimation = false;
     private int numberOfRectangles = 15;
     private Boolean enableTorch = false;
-    public String overlayColor = null;
-    public Boolean saveOnDevice = false;
+    private String overlayColor = null;
+    private Boolean saveOnDevice = false;
     private View blinkView = null;
     private View mView = null;
     private boolean manualCapture = false;
 
-    public static OpenNoteCameraView mThis;
+    private static OpenNoteCameraView mThis;
 
     private OnScannerListener listener = null;
     private OnProcessingListener processingListener = null;
@@ -159,21 +116,12 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         super(context, numCam);
         this.mContext = context;
         this.mActivity = activity;
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         pCallback = this;
         mView = frameLayout;
 
-        LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         initOpenCv(context);
-    }
-
-    public static OpenNoteCameraView getInstance() {
-        return mThis;
-    }
-
-    public void setDocumentAnimation(boolean animate) {
-        this.documentAnimation = animate;
     }
 
     public void setOverlayColor(String rgbaColor) {
@@ -218,42 +166,32 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         }
     }
 
-    public void setRemoveGrayScale(boolean grayscale) {
-        mImageProcessor.setRemoveGrayScale(grayscale);
-    }
-
-    public void initOpenCv(Context context) {
+    private void initOpenCv(Context context) {
 
         mThis = this;
 
-        mHud = (HUDCanvasView) mView.findViewById(R.id.hud);
+        mHud = mView.findViewById(R.id.hud);
         mWaitSpinner = mView.findViewById(R.id.wait_spinner);
         blinkView = mView.findViewById(R.id.blink_view);
         blinkView.setBackgroundColor(Color.WHITE);
-
-        mVisible = true;
 
         mActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Display display = mActivity.getWindowManager().getDefaultDisplay();
         android.graphics.Point size = new android.graphics.Point();
-        display.getRealSize(size);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            display.getRealSize(size);
+        }
 
         BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(context) {
             @Override
             public void onManagerConnected(int status) {
-                switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.d(TAG, "SUCCESS init openCV: " + status);
-                    // System.loadLibrary("ndklibrarysample");
+                if (status == LoaderCallbackInterface.SUCCESS) {
+                    Log.d(TAG, "SUCCESS init OpenCV: " + status);
                     enableCameraView();
-                }
-                    break;
-                default: {
-                    Log.d(TAG, "ERROR init Opencv: " + status);
+                } else {
+                    Log.d(TAG, "ERROR init OpenCV: " + status);
                     super.onManagerConnected(status);
-                }
-                    break;
                 }
             }
         };
@@ -270,7 +208,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         }
 
         if (mImageProcessor == null) {
-            mImageProcessor = new ImageProcessor(mImageThread.getLooper(), new Handler(), this, mContext);
+            mImageProcessor = new ImageProcessor(mImageThread.getLooper(), this, mContext);
         }
         this.setImageProcessorBusy(false);
 
@@ -281,29 +219,24 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
     }
 
     private boolean imageProcessorBusy = true;
-    private boolean attemptToFocus = false;
 
     public void setImageProcessorBusy(boolean imageProcessorBusy) {
         this.imageProcessorBusy = imageProcessorBusy;
-    }
-
-    public void setAttemptToFocus(boolean attemptToFocus) {
-        this.attemptToFocus = attemptToFocus;
     }
 
     public boolean isFocused() {
         return this.mFocused;
     }
 
-    public void turnCameraOn() {
-        mSurfaceView = (SurfaceView) mView.findViewById(R.id.surfaceView);
+    private void turnCameraOn() {
+        mSurfaceView = mView.findViewById(R.id.surfaceView);
         mSurfaceHolder = this.getHolder();
         mSurfaceHolder.addCallback(this);
         mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mSurfaceView.setVisibility(SurfaceView.VISIBLE);
     }
 
-    public void enableCameraView() {
+    private void enableCameraView() {
         if (mSurfaceView == null) {
             turnCameraOn();
         }
@@ -327,7 +260,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         return cameraId;
     }
 
-    public Camera.Size getMaxPreviewResolution() {
+    private Camera.Size getMaxPreviewResolution() {
         int maxWidth = 0;
         Camera.Size curRes = null;
 
@@ -344,7 +277,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         return curRes;
     }
 
-    public Camera.Size getMaxPictureResolution(float previewRatio) {
+    private Camera.Size getMaxPictureResolution(float previewRatio) {
         int maxPixels = 0;
         int ratioMaxPixels = 0;
         Camera.Size currentMaxRes = null;
@@ -365,9 +298,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             }
         }
 
-        // boolean matchAspect = mSharedPref.getBoolean("match_aspect", true);
-
-        if (ratioCurrentMaxRes != null && true) {
+        if (ratioCurrentMaxRes != null) {
 
             Log.d(TAG, "Max supported picture resolution with preview aspect ratio: " + ratioCurrentMaxRes.width + "x"
                     + ratioCurrentMaxRes.height);
@@ -391,22 +322,23 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         Camera.Parameters param;
         param = mCamera.getParameters();
 
-        Camera.Size pSize = getMaxPreviewResolution();
+        Size pSize = getMaxPreviewResolution();
         param.setPreviewSize(pSize.width, pSize.height);
         param.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
         float previewRatio = (float) pSize.width / pSize.height;
 
         Display display = mActivity.getWindowManager().getDefaultDisplay();
-        // Display display =
         android.graphics.Point size = new android.graphics.Point();
-        display.getRealSize(size);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            display.getRealSize(size);
+        }
 
         int displayWidth = Math.min(size.y, size.x);
         int displayHeight = Math.max(size.y, size.x);
 
         float displayRatio = (float) displayHeight / displayWidth;
 
-        int previewHeight = displayHeight;
+        int previewHeight;
 
         if (displayRatio > previewRatio) {
             ViewGroup.LayoutParams surfaceParams = mSurfaceView.getLayoutParams();
@@ -417,10 +349,8 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             mHud.getLayoutParams().height = previewHeight;
         }
 
-        int hotAreaWidth = displayWidth / 4;
-        int hotAreaHeight = previewHeight / 2 - hotAreaWidth;
 
-        Camera.Size maxRes = getMaxPictureResolution(previewRatio);
+        Size maxRes = getMaxPictureResolution(previewRatio);
         if (maxRes != null) {
             param.setPictureSize(maxRes.width, maxRes.height);
             Log.d(TAG, "max supported picture resolution: " + maxRes.width + "x" + maxRes.height);
@@ -439,7 +369,6 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
         mCamera.setParameters(param);
-        // mBugRotate = mSharedPref.getBoolean("bug_rotate", false);
 
         if (mBugRotate) {
             mCamera.setDisplayOrientation(270);
@@ -485,6 +414,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         }
 
         catch (Exception e) {
+            Log.d(TAG, "Error stopping preview: " + e);
         }
 
         try {
@@ -493,6 +423,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             mCamera.startPreview();
             mCamera.setPreviewCallback(this);
         } catch (Exception e) {
+            Log.d(TAG, "Error starting preview: " + e);
         }
     }
 
@@ -522,7 +453,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             yuv.release();
 
             if (!manualCapture) {
-                sendImageProcessorMessage("previewFrame", new PreviewFrame(mat, autoMode, !(autoMode)));
+                sendImageProcessorMessage("previewFrame", new PreviewFrame(mat, true, false));
             }
 
         }
@@ -538,24 +469,23 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         });
     }
 
-    public void sendImageProcessorMessage(String messageText, Object obj) {
+    private void sendImageProcessorMessage(String messageText, Object obj) {
         Log.d(TAG, "sending message to ImageProcessor: " + messageText + " - " + obj.toString());
         Message msg = mImageProcessor.obtainMessage();
         msg.obj = new OpenNoteMessage(messageText, obj);
         mImageProcessor.sendMessage(msg);
     }
 
-    public void blinkScreenAndShutterSound() {
+    private void blinkScreenAndShutterSound() {
         AudioManager audio = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
         switch (audio.getRingerMode()) {
-        case AudioManager.RINGER_MODE_NORMAL:
-            MediaActionSound sound = new MediaActionSound();
-            sound.play(MediaActionSound.SHUTTER_CLICK);
-            break;
-        case AudioManager.RINGER_MODE_SILENT:
-            break;
-        case AudioManager.RINGER_MODE_VIBRATE:
-            break;
+            case AudioManager.RINGER_MODE_NORMAL:
+                MediaActionSound sound = new MediaActionSound();
+                sound.play(MediaActionSound.SHUTTER_CLICK);
+                break;
+            case AudioManager.RINGER_MODE_SILENT:
+            case AudioManager.RINGER_MODE_VIBRATE:
+                break;
         }
     }
 
@@ -584,7 +514,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         });
     }
 
-    public void blinkScreen() {
+    private void blinkScreen() {
         mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -597,25 +527,12 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         });
     }
 
-    public boolean requestManualPicture() {
-        this.blinkScreenAndShutterSound();
+    private void requestManualPicture() {
         this.waitSpinnerVisible();
-
-        if (safeToTakePicture) {
-
-            safeToTakePicture = false;
-
-            try {
-                mCamera.takePicture(null, null, pCallback);
-            } catch (Exception e) {
-                this.waitSpinnerInvisible();
-            }
-            return true;
-        }
-        return false;
+        this.requestPicture();
     }
 
-    public boolean requestPicture() {
+    public void requestPicture() {
         PackageManager pm = mActivity.getPackageManager();
         if (safeToTakePicture) {
 
@@ -626,43 +543,38 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
                     mCamera.autoFocus(new Camera.AutoFocusCallback() {
                         @Override
                         public void onAutoFocus(boolean success, Camera camera) {
+                            Log.d(TAG, "onAutoFocusSuccess: " + success);
                             if (success) {
-                                mCamera.takePicture(null, null, pCallback);
-                                blinkScreen();
-                                blinkScreenAndShutterSound();
-                            }
-                            if (attemptToFocus) {
-                                return;
+                                takePicture();
                             } else {
-                                attemptToFocus = true;
+                                onPictureFailed();
                             }
                         }
                     });
                 } else {
-                    mCamera.takePicture(null, null, pCallback);
-                    blinkScreen();
-                    blinkScreenAndShutterSound();
+                    takePicture();
                 }
             } catch (Exception e) {
-                waitSpinnerInvisible();
-            } finally {
-                waitSpinnerInvisible();
+                onPictureFailed();
             }
-            return true;
         }
-        return false;
     }
 
-    public String saveToDirectory(Mat doc) {
+    private void takePicture() {
+        mCamera.takePicture(null, null, pCallback);
+        blinkScreen();
+        blinkScreenAndShutterSound();
+    }
+
+    private String saveToDirectory(Mat doc) {
         String fileName;
-        boolean isIntent = false;
-        Uri fileUri = null;
         String folderName = "documents";
         String folderDir = this.saveOnDevice ? Environment.getExternalStorageDirectory().toString() : this.mContext.getCacheDir().toString();
         File folder = new File( folderDir + "/" + folderName);
         if (!folder.exists()) {
-            folder.mkdirs();
-            Log.d(TAG, "wrote: created folder " + folder.getPath());
+            boolean result = folder.mkdirs();
+            if (result) Log.d(TAG, "wrote: created folder " + folder.getPath());
+            else Log.d(TAG, "Not possible to create folder"); // TODO: Manage this error better
         }
         fileName = folderDir + "/" + folderName + "/" + UUID.randomUUID()
                 + ".jpg";
@@ -683,10 +595,6 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
 
         Mat doc = (scannedDocument.processed != null) ? scannedDocument.processed : scannedDocument.original;
 
-        Intent intent = mActivity.getIntent();
-        boolean isIntent = false;
-        Uri fileUri = null;
-
         String fileName = this.saveToDirectory(doc);
         String initialFileName = this.saveToDirectory(scannedDocument.original);
 
@@ -702,270 +610,25 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             this.listener.onPictureTaken(data);
         }
 
-        if (isIntent) {
-            InputStream inputStream = null;
-            OutputStream realOutputStream = null;
-            try {
-                inputStream = new FileInputStream(fileName);
-                realOutputStream = mActivity.getContentResolver().openOutputStream(fileUri);
-                // Transfer bytes from in to out
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = inputStream.read(buffer)) > 0) {
-                    realOutputStream.write(buffer, 0, len);
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            } finally {
-                try {
-                    inputStream.close();
-                    realOutputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        }
 
         Log.d(TAG, "wrote: " + fileName);
 
-        if (isIntent) {
-            new File(fileName).delete();
-            mActivity.setResult(Activity.RESULT_OK, intent);
-            mActivity.finish();
-        } else {
-            animateDocument(fileName, scannedDocument);
-            if (this.saveOnDevice) {
-                addImageToGallery(fileName, mContext);
-            }
-        }
 
-        // Record goal "PictureTaken"
-        // ((OpenNoteScannerApplication) getApplication()).getTracker().trackGoal(1);
+        if (this.saveOnDevice) {
+            // TODO: Change name addImageToGallery to saveOnDevice
+            addImageToGallery(fileName, mContext);
+        }
 
         refreshCamera();
 
     }
 
-    private void animateDocument(String filename, ScannedDocument quadrilateral) {
-
-        // if(!documentAnimation) return;
-
-        OpenNoteCameraView.AnimationRunnable runnable = new OpenNoteCameraView.AnimationRunnable(filename,
-                quadrilateral);
-        mActivity.runOnUiThread(runnable);
-        this.waitSpinnerInvisible();
-
-    }
-
-    class AnimationRunnable implements Runnable {
-
-        private org.opencv.core.Size imageSize;
-        private Point[] previewPoints = null;
-        public org.opencv.core.Size previewSize = null;
-        public String fileName = null;
-        public int width;
-        public int height;
-        private Bitmap bitmap;
-
-        public AnimationRunnable(String filename, ScannedDocument document) {
-            this.fileName = filename;
-            this.imageSize = document.processed.size();
-
-            if (document.quadrilateral != null) {
-                this.previewPoints = document.previewPoints;
-                this.previewSize = document.previewSize;
-            }
-        }
-
-        public double hipotenuse(Point a, Point b) {
-            return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-        }
-
-        @Override
-        public void run() {
-            final ImageView imageView = (ImageView) mView.findViewById(R.id.scannedAnimation);
-
-            Display display = mActivity.getWindowManager().getDefaultDisplay();
-            android.graphics.Point size = new android.graphics.Point();
-            display.getRealSize(size);
-
-            int width = Math.min(size.x, size.y);
-            int height = Math.max(size.x, size.y);
-
-            // ATENTION: captured images are always in landscape, values should be swapped
-            double imageWidth = imageSize.height;
-            double imageHeight = imageSize.width;
-
-            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) imageView.getLayoutParams();
-
-            if (previewPoints != null) {
-                double documentLeftHeight = hipotenuse(previewPoints[0], previewPoints[1]);
-                double documentBottomWidth = hipotenuse(previewPoints[1], previewPoints[2]);
-                double documentRightHeight = hipotenuse(previewPoints[2], previewPoints[3]);
-                double documentTopWidth = hipotenuse(previewPoints[3], previewPoints[0]);
-
-                double documentWidth = Math.max(documentTopWidth, documentBottomWidth);
-                double documentHeight = Math.max(documentLeftHeight, documentRightHeight);
-
-                Log.d(TAG, "device: " + width + "x" + height + " image: " + imageWidth + "x" + imageHeight
-                        + " document: " + documentWidth + "x" + documentHeight);
-
-                Log.d(TAG, "previewPoints[0] x=" + previewPoints[0].x + " y=" + previewPoints[0].y);
-                Log.d(TAG, "previewPoints[1] x=" + previewPoints[1].x + " y=" + previewPoints[1].y);
-                Log.d(TAG, "previewPoints[2] x=" + previewPoints[2].x + " y=" + previewPoints[2].y);
-                Log.d(TAG, "previewPoints[3] x=" + previewPoints[3].x + " y=" + previewPoints[3].y);
-
-                // ATENTION: again, swap width and height
-                double xRatio = width / previewSize.height;
-                double yRatio = height / previewSize.width;
-
-                params.topMargin = (int) (previewPoints[3].x * yRatio);
-                params.leftMargin = (int) ((previewSize.height - previewPoints[3].y) * xRatio);
-                params.width = (int) (documentWidth * xRatio);
-                params.height = (int) (documentHeight * yRatio);
-            } else {
-                params.topMargin = height / 4;
-                params.leftMargin = width / 4;
-                params.width = width / 2;
-                params.height = height / 2;
-            }
-
-            bitmap = decodeSampledBitmapFromUri(fileName, params.width, params.height);
-
-            imageView.setImageBitmap(bitmap);
-
-            imageView.setVisibility(View.VISIBLE);
-
-            TranslateAnimation translateAnimation = new TranslateAnimation(Animation.ABSOLUTE, 0, Animation.ABSOLUTE,
-                    -params.leftMargin, Animation.ABSOLUTE, 0, Animation.ABSOLUTE, height - params.topMargin);
-
-            ScaleAnimation scaleAnimation = new ScaleAnimation(1, 0, 1, 0);
-
-            AnimationSet animationSet = new AnimationSet(true);
-
-            animationSet.addAnimation(scaleAnimation);
-            animationSet.addAnimation(translateAnimation);
-
-            animationSet.setDuration(600);
-            animationSet.setInterpolator(new AccelerateInterpolator());
-
-            animationSet.setAnimationListener(new Animation.AnimationListener() {
-                @Override
-                public void onAnimationStart(Animation animation) {
-
-                }
-
-                @Override
-                public void onAnimationEnd(Animation animation) {
-                    imageView.setVisibility(View.INVISIBLE);
-                    imageView.setImageBitmap(null);
-                    OpenNoteCameraView.AnimationRunnable.this.bitmap.recycle();
-                }
-
-                @Override
-                public void onAnimationRepeat(Animation animation) {
-
-                }
-            });
-
-            imageView.startAnimation(animationSet);
-
-        }
-    }
-
-    public List<String> getEffectList() {
-        return mCamera.getParameters().getSupportedColorEffects();
-    }
-
-    public boolean isEffectSupported() {
-        return (mCamera.getParameters().getColorEffect() != null);
-    }
-
-    public boolean isEffectSupported(String effect) {
-        List<String> effectList = getEffectList();
-        for (String str : effectList) {
-            if (str.trim().contains(effect))
-                return true;
-        }
-        return false;
-    }
-
-    public String getEffect() {
-        return mCamera.getParameters().getColorEffect();
-    }
-
-    public void setEffect(String effect) {
-        Camera.Parameters params = mCamera.getParameters();
-        params.setColorEffect(effect);
-        mCamera.setParameters(params);
-    }
-
-    public List<Size> getResolutionList() {
+    private List<Size> getResolutionList() {
         return mCamera.getParameters().getSupportedPreviewSizes();
     }
 
-    public List<Size> getPictureResolutionList() {
+    private List<Size> getPictureResolutionList() {
         return mCamera.getParameters().getSupportedPictureSizes();
-    }
-
-    public void setMaxPictureResolution() {
-        int maxWidth = 0;
-        Size curRes = null;
-        for (Size r : getPictureResolutionList()) {
-            Log.d(TAG, "supported picture resolution: " + r.width + "x" + r.height);
-            if (r.width > maxWidth) {
-                maxWidth = r.width;
-                curRes = r;
-            }
-        }
-
-        if (curRes != null) {
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setPictureSize(curRes.width, curRes.height);
-            mCamera.setParameters(parameters);
-            Log.d(TAG, "selected picture resolution: " + curRes.width + "x" + curRes.height);
-        }
-
-        return;
-    }
-
-    public void setMaxPreviewResolution() {
-        int maxWidth = 0;
-        Size curRes = null;
-
-        mCamera.lock();
-
-        for (Size r : getResolutionList()) {
-            if (r.width > maxWidth) {
-                Log.d(TAG, "supported preview resolution: " + r.width + "x" + r.height);
-                maxWidth = r.width;
-                curRes = r;
-            }
-        }
-
-        if (curRes != null) {
-            setResolution(curRes);
-            Log.d(TAG, "selected preview resolution: " + curRes.width + "x" + curRes.height);
-        }
-
-        return;
-    }
-
-    public void setResolution(Size resolution) {
-        disconnectCamera();
-        mMaxHeight = resolution.height;
-        mMaxWidth = resolution.width;
-        connectCamera(getWidth(), getHeight());
-        Log.d(TAG, "resolution: " + resolution.width + " x " + resolution.height);
-    }
-
-    public Size getResolution() {
-        return mCamera.getParameters().getPreviewSize();
     }
 
     public void setFlash(boolean stateFlash) {
@@ -989,6 +652,14 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
         sendImageProcessorMessage("pictureTaken", mat);
         camera.cancelAutoFocus();
         safeToTakePicture = true;
+        waitSpinnerInvisible();
+
+    }
+
+    private void onPictureFailed() {
+        mCamera.cancelAutoFocus();
+        safeToTakePicture = true;
+        waitSpinnerInvisible();
 
     }
 
