@@ -40,9 +40,6 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Run Build
-          command: yarn build
-      - run:
           name: Publish to NPM
           command: yarn ci:publish
 
