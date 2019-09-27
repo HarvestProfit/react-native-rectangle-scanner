@@ -33,7 +33,7 @@ jobs:
           at: .
       - run:
           name: Run tests
-          command: yarn test
+          command: yarn ci:test
   publish:
     <<: *defaults
     steps:
