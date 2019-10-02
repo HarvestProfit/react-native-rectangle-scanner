@@ -1,43 +1,41 @@
 ![Demo gif](https://raw.githubusercontent.com/Michaelvilleneuve/react-native-document-scanner/master/images/demo.gif)
 
-## Set up dev environment
+# `@woonivers/react-native-document-scanner`
 
-[Medium article](https://medium.com/@charpeni/setting-up-an-example-app-for-your-react-native-library-d940c5cf31e4)
+[![CircleCI Status](https://img.shields.io/circleci/project/github/Woonivers/react-native-document-scanner/master.svg)](https://circleci.com/gh/Woonivers/workflows/react-native-document-scanner/tree/master) ![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
 
-# React Native Document Scanner
-
-Live document detection library. Returns either a URI or a base64 encoded string of the captured image, allowing you to easily store it or use it as you wish !
-
-Features :
+Live document detection library. Returns either a URI of the captured image, allowing you to easily store it or use it as you wish!
 
 - Live detection
 - Perspective correction and crop of the image
-- Live camera filters (brightness, saturation, contrast)
 - Flash
-- Easy to use base64 image
 
-#### Can be easily plugged with [react-native-perspective-image-cropper](https://github.com/Michaelvilleneuve/react-native-perspective-image-cropper)
+## Getting started
 
-![Demo crop gif](https://camo.githubusercontent.com/0ac887deaa7263172a5fd2759dba3d692e98585a/68747470733a2f2f73332d65752d776573742d312e616d617a6f6e6177732e636f6d2f6d69636861656c76696c6c656e657576652f64656d6f2d63726f702e676966)
+Version `>=2.0.0` is thinking to work with React Native >= 0.60
 
-## Both Platform
+> Use [version `1.6.2`](https://github.com/Woonivers/react-native-document-scanner/tree/v1.6.2) if you are using React Native 0.59
 
-Use version >=1.4.1 if you are using react-native 0.48+
+Install the library using either yarn:
 
-`$ npm install @woonivers/react-native-document-scanner --save`
-
-`$ react-native link @woonivers/react-native-document-scanner`
-
-Edit the `info.plist` file in XCode and add the following permission : `NSCameraUsageDescription`
-
-Remember, this library uses your device camera, you can't run it on a simulator.
-
-### iOS if you want to use Cocoapods instead of default linking
-
-If you want to use Cocoapods insteads of `react-native link`, add the following to your Podfile
-
+```sh
+yarn add @woonivers/react-native-document-scanner`
 ```
-  pod 'RNPdfScanner', :path => '../node_modules/@woonivers/react-native-document-scanner/ios'
+
+or npm:
+
+```sh
+npm install @woonivers/react-native-document-scanner --save
+```
+
+Remember, this library uses your device's camera, **it cannot run on a simulator** and you must request **camera permission** by your own.
+
+### iOS Only
+
+CocoaPods on iOS needs this extra step:
+
+```sh
+cd ios && pod install && cd ..
 ```
 
 ### Android Only
@@ -72,80 +70,69 @@ Add Camera permissions request:
 ## Usage
 
 ```javascript
-import React, { Component } from "react"
+import React, { Component, useRef } from "react"
 import { View, Image } from "react-native"
 
 import DocumentScanner from "react-native-document-scanner"
 
-class YourComponent extends Component {
-  render() {
-    return (
-      <View>
-        <DocumentScanner
-          useBase64
-          saveInAppDocument={false}
-          onPictureTaken={data =>
-            this.setState({
-              image: data.croppedImage,
-              initialImage: data.initialImage,
-              rectangleCoordinates: data.rectangleCoordinates,
-            })
-          }
-          overlayColor="rgba(255,130,0, 0.7)"
-          enableTorch={false}
-          brightness={0.3}
-          saturation={1}
-          contrast={1.1}
-          quality={0.5}
-          onRectangleDetect={({ stableCounter, lastDetectionType }) =>
-            this.setState({ stableCounter, lastDetectionType })
-          }
-          detectionCountBeforeCapture={5}
-          detectionRefreshRateInMS={50}
-        />
-        <Image
-          source={{ uri: `data:image/jpeg;base64,${this.state.image}` }}
-          resizeMode="contain"
-        />
-      </View>
-    )
-  }
+function YourComponent(props) {
+  return (
+    <View>
+      <PDFScanner
+        style={styles.scanner}
+        onPictureTaken={handleOnPictureTaken}
+        overlayColor="rgba(255,130,0, 0.7)"
+        enableTorch={false}
+        quality={0.5}
+        detectionCountBeforeCapture={5}
+        detectionRefreshRateInMS={50}
+      />
+    </View>
+  )
 }
 ```
 
+Full example in [example folder](https://github.com/Woonivers/react-native-document-scanner/tree/master/example).
+
 ## Properties
 
-| Prop                        | Platform | Default |   Type    | Description                                                       |
-| :-------------------------- | :------: | :-----: | :-------: | :---------------------------------------------------------------- |
-| overlayColor                |   Both   | `none`  | `string`  | Color of the detected rectangle : rgba recommended                |
-| detectionCountBeforeCapture |   Both   |   `5`   | `integer` | Number of correct rectangle to detect before capture              |
-| detectionRefreshRateInMS    |   iOS    |  `50`   | `integer` | Time between two rectangle detection attempt                      |
-| enableTorch                 |   Both   | `false` |  `bool`   | Allows to active or deactivate flash during document detection    |
-| useFrontCam                 |   iOS    | `false` |  `bool`   | Allows you to switch between front and back camera                |
-| brightness                  |   iOS    |   `0`   |  `float`  | Increase or decrease camera brightness. Normal as default.        |
-| saturation                  |   iOS    |   `1`   |  `float`  | Increase or decrease camera saturation. Set `0` for black & white |
-| contrast                    |   iOS    |   `1`   |  `float`  | Increase or decrease camera contrast. Normal as default           |
-| quality                     |   iOS    |  `0.8`  |  `float`  | Image compression. Reduces both image size and quality            |
-| useBase64                   |   iOS    | `false` |  `bool`   | If base64 representation should be passed instead of image uri's  |
-| saveInAppDocument           |   iOS    | `false` |  `bool`   | If should save in app document in case of not using base 64       |
-| captureMultiple             |   iOS    | `false` |  `bool`   | Keeps the scanner on after a successful capture                   |
-| saveOnDevice                | Android  | `false` |  `bool`   | Save the image in the device storage (**Need permissions**)       |
+| Prop                        | Platform | Default |   Type    | Description                                                         |
+| :-------------------------- | :------: | :-----: | :-------: | :------------------------------------------------------------------ |
+| overlayColor                |   Both   | `none`  | `string`  | Color of the detected rectangle : rgba recommended                  |
+| detectionCountBeforeCapture |   Both   |   `5`   | `integer` | Number of correct rectangle to detect before capture                |
+| detectionRefreshRateInMS    |   iOS    |  `50`   | `integer` | Time between two rectangle detection attempt                        |
+| enableTorch                 |   Both   | `false` |  `bool`   | Allows to active or deactivate flash during document detection      |
+| useFrontCam                 |   iOS    | `false` |  `bool`   | Allows you to switch between front and back camera                  |
+| brightness                  |   iOS    |   `0`   |  `float`  | Increase or decrease camera brightness. Normal as default.          |
+| saturation                  |   iOS    |   `1`   |  `float`  | Increase or decrease camera saturation. Set `0` for black & white   |
+| contrast                    |   iOS    |   `1`   |  `float`  | Increase or decrease camera contrast. Normal as default             |
+| quality                     |   iOS    |  `0.8`  |  `float`  | Image compression. Reduces both image size and quality              |
+| useBase64                   |   iOS    | `false` |  `bool`   | If base64 representation should be passed instead of image uri's    |
+| saveInAppDocument           |   iOS    | `false` |  `bool`   | If should save in app document in case of not using base 64         |
+| captureMultiple             |   iOS    | `false` |  `bool`   | Keeps the scanner on after a successful capture                     |
+| saveOnDevice                | Android  | `false` |  `bool`   | Save the image in the device storage (**Need storage permissions**) |
 
 ## Manual capture
 
-- First get component ref
+- First create a mutable ref object:
 
 ```javascript
-<DocumentScanner ref={ref => (this.scanner = ref)} />
+const pdfScannerElement = useRef(null)
 ```
 
-- Then call :
+- Pass a ref object to your component:
 
 ```javascript
-this.scanner.capture()
+<DocumentScanner ref={pdfScannerElement} />
 ```
 
-## Each rectangle detection (iOS only)
+- Then call:
+
+```javascript
+pdfScannerElement.current.capture()
+```
+
+## Each rectangle detection (iOS only) _-Non tested-_
 
 | Props             | Params                                 | Type     | Description |
 | ----------------- | -------------------------------------- | -------- | ----------- |
@@ -167,11 +154,11 @@ Enum (0, 1 or 2) corresponding to the type of rectangle found
 
 ## Returned image
 
-| Prop           | Params |   Type   | Description                                                                                                                                                               |
-| :------------- | :----: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| onPictureTaken | `data` | `object` | Returns the captured image in an object `{ croppedImage: ('URI or BASE64 string'), initialImage: 'URI or BASE64 string', rectangleCoordinates: 'object of coordinates' }` |
+| Prop           | Params |   Type   | Description                                                                                                                                                                         |
+| :------------- | :----: | :------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| onPictureTaken | `data` | `object` | Returns the captured image in an object `{ croppedImage: ('URI or BASE64 string'), initialImage: 'URI or BASE64 string', rectangleCoordinates[only iOS]: 'object of coordinates' }` |
 
-## Save in app document
+## Save in app document _-Non tested-_
 
 If you want to use saveInAppDocument options, then don't forget to add those raws in .plist :
 
@@ -179,3 +166,9 @@ If you want to use saveInAppDocument options, then don't forget to add those raw
 <key>LSSupportsOpeningDocumentsInPlace</key>
 <true/>
 ```
+
+# Contributors
+
+## Set up dev environment
+
+[Medium article](https://medium.com/@charpeni/setting-up-an-example-app-for-your-react-native-library-d940c5cf31e4)
