@@ -605,7 +605,7 @@ public class OpenNoteCameraView extends JavaCameraView implements PictureCallbac
             data.putInt("width", scannedDocument.widthWithRatio);
             data.putString("croppedImage", "file://" + fileName);
             data.putString("initialImage", "file://" + initialFileName);
-            data.putMap("rectangleCoordinates", scannedDocument.previewPointsAsHash());
+            // data.putMap("rectangleCoordinates", scannedDocument.previewPointsAsHash());
 
             this.listener.onPictureTaken(data);
         }
