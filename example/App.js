@@ -1,16 +1,32 @@
-import React, { useRef, useState } from "react"
-import { StyleSheet, Text, TouchableOpacity, Image } from "react-native"
+import React, { useRef, useState, useEffect } from "react"
+import { View, StyleSheet, Text, TouchableOpacity, Image, Platform } from "react-native"
+import Permissions from 'react-native-permissions';
 import PDFScanner from "@woonivers/react-native-document-scanner"
 
 export default function App() {
   const pdfScannerElement = useRef(null)
   const [data, setData] = useState({})
+  const [allowed, setAllowed] = useState(false)
+
+  useEffect(() => {
+    async function requestCamera() {
+      const result = await Permissions.request(Platform.OS === "android" ? "android.permission.CAMERA" : "ios.permission.CAMERA")
+      if (result === "granted") setAllowed(true)
+    }
+    requestCamera()
+  }, [])
 
   function handleOnPressRetry() {
     setData({})
   }
   function handleOnPress() {
     pdfScannerElement.current.capture()
+  }
+  if (!allowed) {
+    console.log("You must accept camera permission")
+    return (<View style={styles.permissions}>
+      <Text>You must accept camera permission</Text>
+    </View>)
   }
   if (data.croppedImage) {
     console.log("data", data)
@@ -48,7 +64,8 @@ export default function App() {
 const styles = StyleSheet.create({
   scanner: {
     flex: 1,
-    width: "100%",
+    // width: "100%",
+
   },
   button: {
     alignSelf: "center",
@@ -64,4 +81,9 @@ const styles = StyleSheet.create({
     width: "100%",
     resizeMode: "cover",
   },
+  permissions: {
+    flex:1,
+    justifyContent: "center",
+    alignItems: "center"
+  }
 })
