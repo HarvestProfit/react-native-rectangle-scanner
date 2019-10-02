@@ -78,7 +78,7 @@ import DocumentScanner from "@woonivers/react-native-document-scanner"
 function YourComponent(props) {
   return (
     <View>
-      <PDFScanner
+      <DocumentScanner
         style={styles.scanner}
         onPictureTaken={handleOnPictureTaken}
         overlayColor="rgba(255,130,0, 0.7)"
@@ -117,19 +117,19 @@ Full example in [example folder](https://github.com/Woonivers/react-native-docum
 - First create a mutable ref object:
 
 ```javascript
-const pdfScannerElement = useRef(null)
+const documentScannerElement = useRef(null)
 ```
 
 - Pass a ref object to your component:
 
 ```javascript
-<DocumentScanner ref={pdfScannerElement} />
+<DocumentScanner ref={documentScannerElement} />
 ```
 
 - Then call:
 
 ```javascript
-pdfScannerElement.current.capture()
+documentScannerElement.current.capture()
 ```
 
 ## Each rectangle detection (iOS only) _-Non tested-_
