@@ -73,7 +73,7 @@ Add Camera permissions request:
 import React, { Component, useRef } from "react"
 import { View, Image } from "react-native"
 
-import DocumentScanner from "react-native-document-scanner"
+import DocumentScanner from "@woonivers/react-native-document-scanner"
 
 function YourComponent(props) {
   return (
