@@ -47,9 +47,6 @@ export default function App() {
         onPictureTaken={setData}
         overlayColor="rgba(255,130,0, 0.7)"
         enableTorch={false}
-        brightness={0.3}
-        saturation={1}
-        contrast={1.1}
         quality={0.5}
         detectionCountBeforeCapture={5}
         detectionRefreshRateInMS={50}
@@ -64,8 +61,7 @@ export default function App() {
 const styles = StyleSheet.create({
   scanner: {
     flex: 1,
-    // width: "100%",
-
+    aspectRatio: undefined
   },
   button: {
     alignSelf: "center",
