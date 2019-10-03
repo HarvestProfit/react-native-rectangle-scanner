@@ -7,10 +7,11 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "postinstall": "node ../scripts/examples_postinstall.js"
   },
   "dependencies": {
-    "@woonivers/react-native-document-scanner": "^2.0.0",
+    "@woonivers/react-native-document-scanner": "file:../",
     "react": "16.9.0",
     "react-native": "0.61.1",
     "react-native-permissions": "^2.0.0"

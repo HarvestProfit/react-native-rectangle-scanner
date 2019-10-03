@@ -1041,10 +1041,8 @@
     lodash.unescape "4.0.1"
     semver "5.5.0"
 
-"@woonivers/react-native-document-scanner@^1.6.2":
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/@woonivers/react-native-document-scanner/-/react-native-document-scanner-1.6.2.tgz#67caffe0e5ca41e979c98872fd11a4e83baef315"
-  integrity sha512-+c8q0Hb5KYf3qSai33HiSPeN4qJMgutS5xoLAEkaG2BQcRgI0JvKnxQA5GnuDMehHFcIoAyCL3E1JiqhFNazSQ==
+"@woonivers/react-native-document-scanner@file:../":
+  version "0.0.0-development"
 
 abab@^2.0.0:
   version "2.0.2"
