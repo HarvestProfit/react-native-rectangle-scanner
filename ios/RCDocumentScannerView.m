@@ -1,26 +1,19 @@
 #import "RCDocumentScannerView.h"
-#import "RCIPDFCameraViewController.h"
 
 @implementation RCDocumentScannerView
 
 - (instancetype)init {
     self = [super init];
-    NSLog(@"INIT");
     if (self) {
         [self setEnableBorderDetection:YES];
         [self setDelegate: self];
     }
 
     return self;
-}
-
-- (BOOL)shouldAutorotate
-{
-    return FALSE;
 } 
 
 
-- (void) didDetectRectangle:(CIRectangleFeature *)rectangle withType:(RCIPDFRectangeType)type {
+- (void) didDetectRectangle:(CIRectangleFeature *)rectangle withType:(ScannerRectangleType)type {
     switch (type) {
         case RCIPDFRectangeTypeGood:
             self.stableCounter ++;
@@ -33,12 +26,27 @@
         self.onRectangleDetect(@{@"stableCounter": @(self.stableCounter), @"lastDetectionType": @(type)});
     }
 
-    if (self.stableCounter > self.detectionCountBeforeCapture){
+    if (self.captureOnDetect && self.hasTakenPhoto && self.stableCounter > self.detectionCountBeforeCapture){
         [self capture];
     }
 }
 
+- (void) startCamera {
+  if ([self _isStopped]) [self start];
+}
+
+- (void) stopCamera {
+  if (![self _isStopped]) [self stop];
+}
+
+- (void)flashEnabledHandler:(BOOL)deviceHasFlash{
+  if (self.onDeviceSetup) {
+    self.onDeviceSetup(@{ @"flash": deviceHasFlash ? @TRUE : @FALSE });
+  }
+}
+
 - (void) capture {
+  self.hasTakenPhoto = TRUE;
     [self captureImageWithCompletionHander:^(UIImage *croppedImage, UIImage *initialImage, CIRectangleFeature *rectangleFeature) {
       if (self.onPictureTaken) {
             NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, self.quality);
@@ -86,12 +94,8 @@
                                      @"rectangleCoordinates": rectangleCoordinates });
             }
         }
-
-        if (!self.captureMultiple) {
-          [self stop];
-        }
+      self.hasTakenPhoto = FALSE;
     }];
-
 }
 
 
