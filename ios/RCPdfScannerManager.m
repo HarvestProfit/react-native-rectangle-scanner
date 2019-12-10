@@ -1,19 +1,19 @@
 
-#import "RNPdfScannerManager.h"
-#import "DocumentScannerView.h"
+#import "RCPdfScannerManager.h"
+#import "RCDocumentScannerView.h"
 
-@interface RNPdfScannerManager()
-@property (strong, nonatomic) DocumentScannerView *scannerView;
+@interface RCPdfScannerManager()
+@property (strong, nonatomic) RCDocumentScannerView *scannerView;
 @end
 
-@implementation RNPdfScannerManager
+@implementation RCPdfScannerManager
 
 - (dispatch_queue_t)methodQueue
 {
     return dispatch_get_main_queue();
 }
 
-RCT_EXPORT_MODULE()
+RCT_EXPORT_MODULE(RCPdfScannerManager)
 
 RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onRectangleDetect, RCTBubblingEventBlock)
@@ -38,8 +38,14 @@ RCT_EXPORT_METHOD(capture) {
 }
 
 - (UIView*) view {
-    _scannerView = [[DocumentScannerView alloc] init];
+  NSLog(@"PDF SCANNER");
+    _scannerView = [[RCDocumentScannerView alloc] init];
     return _scannerView;
 }
+
+- (BOOL)shouldAutorotate
+{
+    return FALSE;
+} 
 
 @end

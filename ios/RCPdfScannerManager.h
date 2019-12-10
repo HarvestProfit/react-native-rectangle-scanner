@@ -3,6 +3,6 @@
 
 #import <React/RCTViewManager.h>
 
-@interface RNPdfScannerManager : RCTViewManager <RCTBridgeModule>
+@interface RCPdfScannerManager : RCTViewManager <RCTBridgeModule>
 
 @end

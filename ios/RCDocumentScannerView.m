@@ -1,10 +1,11 @@
-#import "DocumentScannerView.h"
-#import "IPDFCameraViewController.h"
+#import "RCDocumentScannerView.h"
+#import "RCIPDFCameraViewController.h"
 
-@implementation DocumentScannerView
+@implementation RCDocumentScannerView
 
 - (instancetype)init {
     self = [super init];
+    NSLog(@"INIT");
     if (self) {
         [self setEnableBorderDetection:YES];
         [self setDelegate: self];
@@ -13,10 +14,15 @@
     return self;
 }
 
+- (BOOL)shouldAutorotate
+{
+    return FALSE;
+} 
 
-- (void) didDetectRectangle:(CIRectangleFeature *)rectangle withType:(IPDFRectangeType)type {
+
+- (void) didDetectRectangle:(CIRectangleFeature *)rectangle withType:(RCIPDFRectangeType)type {
     switch (type) {
-        case IPDFRectangeTypeGood:
+        case RCIPDFRectangeTypeGood:
             self.stableCounter ++;
             break;
         default:

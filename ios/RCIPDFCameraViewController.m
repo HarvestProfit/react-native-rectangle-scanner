@@ -6,7 +6,7 @@
 //  Copyright (c) 2015 mackh ag. All rights reserved.
 //
 
-#import "IPDFCameraViewController.h"
+#import "RCIPDFCameraViewController.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
@@ -15,20 +15,96 @@
 #import <ImageIO/ImageIO.h>
 #import <GLKit/GLKit.h>
 
-@interface IPDFCameraViewController () <AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface RCIPDFCameraViewController () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
+/*!
+@property session
+@abstract
+The capture session used for scanning documents.
+*/
 @property (nonatomic,strong) AVCaptureSession *captureSession;
+
+/*!
+@property captureDevice
+@abstract
+Represents the physical device that is used for scanning documents (back camera for example).
+*/
 @property (nonatomic,strong) AVCaptureDevice *captureDevice;
+
+/*!
+ @property capturePreviewLayer
+ @abstract
+ The layer used to view the camera input. This layer is added to the
+ previewView when scanning starts.
+ */
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer *capturePreviewLayer;
+
+/*!
+ @property currentCaptureDeviceInput
+ @abstract
+ The current capture device input for capturing video. This is used
+ to reset the camera to its initial properties when scanning stops.
+ */
+@property (nonatomic, strong) AVCaptureDeviceInput *currentCaptureDeviceInput;
+
+/*
+ @property captureDeviceOnput
+ @abstract
+ The capture device output for capturing video.
+ */
+@property (nonatomic, strong) AVCaptureMetadataOutput *captureOutput;
+
+/*!
+ @property previewView
+ @abstract
+ The view used to preview the camera input.
+ 
+ @discussion
+ The AVCaptureVideoPreviewLayer is added to this view to preview the
+ camera input when scanning starts. When scanning stops, the layer is
+ removed.
+ */
+@property (nonatomic, weak) UIView *previewView;
+
+
 @property (nonatomic,strong) EAGLContext *context;
 
-@property (nonatomic, strong) AVCaptureStillImageOutput* stillImageOutput;
+/*!
+ @property stillImageOutput
+ @abstract
+ Used for still image capture prior to iOS 10
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+@property (nonatomic, strong) AVCaptureStillImageOutput *stillImageOutput;
+#pragma GCC diagnostic pop
+
+/*!
+ @property stillImageCaptureBlock
+ @abstract
+ Reference to the block passed in when capturing a still image.
+ */
+@property (nonatomic, copy) void (^stillImageCaptureBlock)(UIImage *image, NSError *error);
+
+/*!
+ @property output
+ @abstract
+ Property used for capturing still photos during document capture.
+ */
+@property (nonatomic, strong) AVCapturePhotoOutput *output NS_AVAILABLE_IOS(10.0);
+
+
 
 @property (nonatomic, assign) BOOL forceStop;
 @property (nonatomic, assign) float lastDetectionRate;
 
+
+
 @end
 
-@implementation IPDFCameraViewController
+
+
+@implementation RCIPDFCameraViewController
 {
     CIContext *_coreImageContext;
     GLuint _renderBuffer;
@@ -63,6 +139,11 @@
     self.forceStop = NO;
 }
 
+- (BOOL)shouldAutorotate
+{
+    return FALSE;
+}
+
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -89,7 +170,9 @@
 
 - (void)setupCameraView
 {
+  NSLog(@"SET UP CAMERA");
     [self createGLKView];
+  NSLog(@"DONE WITH GLK");
 
     AVCaptureDevice *device = nil;
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
@@ -104,6 +187,7 @@
             }
         }
     }
+  
     if (!device) return;
 
     _imageDedectionConfidence = 0.0;
@@ -114,6 +198,7 @@
     self.captureDevice = device;
 
     NSError *error = nil;
+    // Also requests permission
     AVCaptureDeviceInput* input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
     session.sessionPreset = AVCaptureSessionPresetPhoto;
     [session addInput:input];
@@ -128,7 +213,8 @@
     [session addOutput:self.stillImageOutput];
 
     AVCaptureConnection *connection = [dataOutput.connections firstObject];
-    [connection setVideoOrientation:AVCaptureVideoOrientationPortrait];
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    [connection setVideoOrientation:orientation];
 
     if (device.isFlashAvailable)
     {
@@ -144,10 +230,44 @@
         }
     }
 
+    [self addObservers];
     [session commitConfiguration];
 }
 
-- (void)setCameraViewType:(IPDFCameraViewType)cameraViewType
+- (void)handleApplicationDidChangeStatusBarNotification:(NSNotification *)notification {
+    [self refreshVideoOrientation];
+}
+
+- (void)refreshVideoOrientation {
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+  NSLog(@"CHANGED ORIENTATION");
+  [[[self.captureSession.outputs firstObject].connections firstObject] setVideoOrientation:orientation];
+}
+
+- (AVCaptureVideoOrientation)captureOrientationForInterfaceOrientation:(UIDeviceOrientation)deviceOrientation {
+switch (deviceOrientation) {
+        case UIDeviceOrientationPortrait:
+            return AVCaptureVideoOrientationPortrait;
+        case UIDeviceOrientationPortraitUpsideDown:
+            return AVCaptureVideoOrientationPortraitUpsideDown;
+        case UIDeviceOrientationLandscapeLeft:
+            return AVCaptureVideoOrientationLandscapeRight;
+        case UIDeviceOrientationLandscapeRight:
+            return AVCaptureVideoOrientationLandscapeLeft;
+        default:
+            return AVCaptureVideoOrientationPortrait;
+        }
+}
+
+- (void)addObservers {
+  NSLog(@"ADD OBSERVE");
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleApplicationDidChangeStatusBarNotification:)
+                                                 name:UIApplicationDidChangeStatusBarOrientationNotification
+                                               object:nil];
+}
+
+- (void)setCameraViewType:(RCIPDFCameraViewType)cameraViewType
 {
     UIBlurEffect * effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
     UIVisualEffectView *viewWithBlurredBackground =[[UIVisualEffectView alloc] initWithEffect:effect];
@@ -172,7 +292,7 @@
 
     CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
 
-    if (self.cameraViewType != IPDFCameraViewTypeNormal)
+    if (self.cameraViewType != RCIPDFCameraViewTypeNormal)
     {
         image = [self filteredImageUsingEnhanceFilterOnImage:image];
     }
@@ -375,11 +495,11 @@
      {
          NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageSampleBuffer];
 
-         if (weakSelf.cameraViewType == IPDFCameraViewTypeBlackAndWhite || weakSelf.isBorderDetectionEnabled)
+         if (weakSelf.cameraViewType == RCIPDFCameraViewTypeBlackAndWhite || weakSelf.isBorderDetectionEnabled)
          {
              CIImage *enhancedImage = [CIImage imageWithData:imageData];
 
-             if (weakSelf.cameraViewType == IPDFCameraViewTypeBlackAndWhite)
+             if (weakSelf.cameraViewType == RCIPDFCameraViewTypeBlackAndWhite)
              {
                  enhancedImage = [self filteredImageUsingEnhanceFilterOnImage:enhancedImage];
              }
@@ -388,22 +508,39 @@
                  enhancedImage = [self filteredImageUsingContrastFilterOnImage:enhancedImage];
              }
 
-             if (weakSelf.isBorderDetectionEnabled && rectangleDetectionConfidenceHighEnough(_imageDedectionConfidence))
+             if (weakSelf.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(_imageDedectionConfidence))
              {
                  CIRectangleFeature *rectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:enhancedImage]];
 
                  if (rectangleFeature)
                  {
-                     enhancedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:rectangleFeature];
+                   enhancedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:rectangleFeature];
+                   CGFloat rectHeight;
+                   CGFloat rectWidth;
+                   int orientation = [self getOrientationForImage];
+                   if ([self isPortraitOrientation]) {
+                     // Portrait Layout (height/width is normal)
+                     rectHeight = enhancedImage.extent.size.height;
+                     rectWidth = enhancedImage.extent.size.width;
+                   } else {
+                     // Landscape layout (height/width is reversed
+                     rectHeight = enhancedImage.extent.size.width;
+                     rectWidth = enhancedImage.extent.size.height;
+                   }
+                   
+                   UIGraphicsBeginImageContext(CGSizeMake(rectHeight, rectWidth));
+                   
+                   
+                   [
+                    [UIImage imageWithCIImage:enhancedImage scale:1.0 orientation:orientation]
+                    drawInRect:CGRectMake(0,0, rectHeight, rectWidth)
+                   ];
+                   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+                   UIImage *initialImage = [UIImage imageWithData:imageData];
+                   UIGraphicsEndImageContext();
 
-                     UIGraphicsBeginImageContext(CGSizeMake(enhancedImage.extent.size.height, enhancedImage.extent.size.width));
-                     [[UIImage imageWithCIImage:enhancedImage scale:1.0 orientation:UIImageOrientationRight] drawInRect:CGRectMake(0,0, enhancedImage.extent.size.height, enhancedImage.extent.size.width)];
-                     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-                     UIImage *initialImage = [UIImage imageWithData:imageData];
-                     UIGraphicsEndImageContext();
-
-                     [weakSelf hideGLKView:NO completion:nil];
-                     completionHandler(image, initialImage, rectangleFeature);
+                   [weakSelf hideGLKView:NO completion:nil];
+                   completionHandler(image, initialImage, rectangleFeature);
                  }
              } else {
                  [weakSelf hideGLKView:NO completion:nil];
@@ -460,7 +597,40 @@
   rectangleCoordinates[@"inputTopRight"] = [CIVector vectorWithCGPoint:newRight];
   rectangleCoordinates[@"inputBottomLeft"] = [CIVector vectorWithCGPoint:newBottomLeft];
   rectangleCoordinates[@"inputBottomRight"] = [CIVector vectorWithCGPoint:newBottomRight];
+  
   return [image imageByApplyingFilter:@"CIPerspectiveCorrection" withInputParameters:rectangleCoordinates];
+}
+
+- (int)getOrientationForImage
+{
+  switch ([UIApplication sharedApplication].statusBarOrientation) {
+  case UIDeviceOrientationPortrait:
+      return UIImageOrientationRight;
+  case UIDeviceOrientationPortraitUpsideDown:
+      return UIImageOrientationLeft;
+  case UIDeviceOrientationLandscapeLeft:
+      return UIImageOrientationUp;
+  case UIDeviceOrientationLandscapeRight:
+      return UIImageOrientationDown;
+  default:
+      return UIImageOrientationRight;
+  }
+}
+
+- (bool)isPortraitOrientation
+{
+  switch ([UIApplication sharedApplication].statusBarOrientation) {
+  case UIDeviceOrientationPortrait:
+      return true;
+  case UIDeviceOrientationPortraitUpsideDown:
+      return true;
+  case UIDeviceOrientationLandscapeLeft:
+      return false;
+  case UIDeviceOrientationLandscapeRight:
+      return false;
+  default:
+      return true;
+  }
 }
 
 - (CIDetector *)rectangleDetetor
@@ -519,22 +689,22 @@
     return biggestRectangle;
 }
 
-- (IPDFRectangeType) typeForRectangle: (CIRectangleFeature*) rectangle {
+- (RCIPDFRectangeType) typeForRectangle: (CIRectangleFeature*) rectangle {
     if (fabs(rectangle.topRight.y - rectangle.topLeft.y) > 100 ||
         fabs(rectangle.topRight.x - rectangle.bottomRight.x) > 100 ||
         fabs(rectangle.topLeft.x - rectangle.bottomLeft.x) > 100 ||
         fabs(rectangle.bottomLeft.y - rectangle.bottomRight.y) > 100) {
-        return IPDFRectangeTypeBadAngle;
+        return RCIPDFRectangeTypeBadAngle;
     } else if ((_glkView.frame.origin.y + _glkView.frame.size.height) - rectangle.topLeft.y > 150 ||
                (_glkView.frame.origin.y + _glkView.frame.size.height) - rectangle.topRight.y > 150 ||
                _glkView.frame.origin.y - rectangle.bottomLeft.y > 150 ||
                _glkView.frame.origin.y - rectangle.bottomRight.y > 150) {
-        return IPDFRectangeTypeTooFar;
+        return RCIPDFRectangeTypeTooFar;
     }
-    return IPDFRectangeTypeGood;
+    return RCIPDFRectangeTypeGood;
 }
 
-BOOL rectangleDetectionConfidenceHighEnough(float confidence)
+BOOL isRectangleDetectionConfidenceHighEnough(float confidence)
 {
     return (confidence > 1.0);
 }

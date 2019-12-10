@@ -1,7 +1,7 @@
-#import "IPDFCameraViewController.h"
+#import "RCIPDFCameraViewController.h"
 #import <React/RCTViewManager.h>
 
-@interface DocumentScannerView : IPDFCameraViewController <IPDFCameraViewControllerDelegate>
+@interface RCDocumentScannerView : RCIPDFCameraViewController <RCIPDFCameraViewControllerDelegate>
 
 @property (nonatomic, copy) RCTBubblingEventBlock onPictureTaken;
 @property (nonatomic, copy) RCTBubblingEventBlock onRectangleDetect;

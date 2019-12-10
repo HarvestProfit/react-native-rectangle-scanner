@@ -8,26 +8,26 @@
 
 #import <UIKit/UIKit.h>
 
-typedef NS_ENUM(NSInteger,IPDFCameraViewType)
+typedef NS_ENUM(NSInteger,RCIPDFCameraViewType)
 {
-    IPDFCameraViewTypeBlackAndWhite,
-    IPDFCameraViewTypeNormal
+    RCIPDFCameraViewTypeBlackAndWhite,
+    RCIPDFCameraViewTypeNormal
 };
 
-typedef NS_ENUM(NSInteger, IPDFRectangeType)
+typedef NS_ENUM(NSInteger, RCIPDFRectangeType)
 {
-    IPDFRectangeTypeGood,
-    IPDFRectangeTypeBadAngle,
-    IPDFRectangeTypeTooFar
+    RCIPDFRectangeTypeGood,
+    RCIPDFRectangeTypeBadAngle,
+    RCIPDFRectangeTypeTooFar
 };
 
-@protocol IPDFCameraViewControllerDelegate <NSObject>
+@protocol RCIPDFCameraViewControllerDelegate <NSObject>
 
-- (void) didDetectRectangle: (CIRectangleFeature*) rectangle withType: (IPDFRectangeType) type;
+- (void) didDetectRectangle: (CIRectangleFeature*) rectangle withType: (RCIPDFRectangeType) type;
 
 @end
 
-@interface IPDFCameraViewController : UIView
+@interface RCIPDFCameraViewController : UIView
 
 - (void)setupCameraView;
 
@@ -38,9 +38,9 @@ typedef NS_ENUM(NSInteger, IPDFRectangeType)
 @property (nonatomic,assign,getter=isTorchEnabled) BOOL enableTorch;
 @property (nonatomic,assign,getter=isFrontCam) BOOL useFrontCam;
 
-@property (weak, nonatomic) id<IPDFCameraViewControllerDelegate> delegate;
+@property (weak, nonatomic) id<RCIPDFCameraViewControllerDelegate> delegate;
 
-@property (nonatomic,assign) IPDFCameraViewType cameraViewType;
+@property (nonatomic,assign) RCIPDFCameraViewType cameraViewType;
 
 - (void)focusAtPoint:(CGPoint)point completionHandler:(void(^)())completionHandler;
 
