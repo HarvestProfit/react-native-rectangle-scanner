@@ -26,55 +26,46 @@
     NSTimer *_borderDetectTimeKeeper;
     BOOL _borderDetectFrame;
     CIRectangleFeature *_borderDetectLastRectangleFeature;
+  CGRect _borderDetectLastRectangleBounds;
     NSInteger _detectionRefreshRateInMS;
 }
 
--(CIImage *)processOutput:(CIImage *)image
+// MARK: Getters
+
+// MARK: Setters
+
+/*!
+ Determines how often the enableBorderDetectFrame setter is called from the timer
+ */
+- (void)setDetectionRefreshRateInMS:(NSInteger)detectionRefreshRateInMS
 {
-  image = [super processOutput:image];
-  if (self.isBorderDetectionEnabled)
-  {
-    if (_borderDetectFrame)
-    {
-      _borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:image]];
-      _borderDetectFrame = NO;
-    }
-
-    if (_borderDetectLastRectangleFeature)
-    {
-      _imageDedectionConfidence += .5;
-
-      image = [self drawHighlightOverlayForPoints:image topLeft:_borderDetectLastRectangleFeature.topLeft topRight:_borderDetectLastRectangleFeature.topRight bottomLeft:_borderDetectLastRectangleFeature.bottomLeft bottomRight:_borderDetectLastRectangleFeature.bottomRight];
-    }
-    else
-    {
-      _imageDedectionConfidence = 0.0f;
-    }
-  }
-  return image;
+    _detectionRefreshRateInMS = detectionRefreshRateInMS;
 }
 
+/*!
+ Turns on the image detection.  Once turned on, the next frame displayed on the previewlayer will get scanned for a
+ rectangle then it will turn off the border detection.
+ */
+- (void)enableBorderDetectFrame
+{
+  NSLog(@"enable border detect");
+    _borderDetectFrame = YES;
+}
 
+// MARK: Camera
+
+/*!
+ Before setting up the camera, set the deduction confidence to 0
+ */
 - (void)setupCameraView
 {
   _imageDedectionConfidence = 0.0;
   [super setupCameraView];
 }
 
-- (void)enableBorderDetectFrame
-{
-    _borderDetectFrame = YES;
-}
-
-- (CIImage *)drawHighlightOverlayForPoints:(CIImage *)image topLeft:(CGPoint)topLeft topRight:(CGPoint)topRight bottomLeft:(CGPoint)bottomLeft bottomRight:(CGPoint)bottomRight
-{
-    CIImage *overlay = [CIImage imageWithColor:[[CIColor alloc] initWithColor:self.overlayColor]];
-    overlay = [overlay imageByCroppingToRect:image.extent];
-    overlay = [overlay imageByApplyingFilter:@"CIPerspectiveTransformWithExtent" withInputParameters:@{@"inputExtent":[CIVector vectorWithCGRect:image.extent],@"inputTopLeft":[CIVector vectorWithCGPoint:topLeft],@"inputTopRight":[CIVector vectorWithCGPoint:topRight],@"inputBottomLeft":[CIVector vectorWithCGPoint:bottomLeft],@"inputBottomRight":[CIVector vectorWithCGPoint:bottomRight]}];
-
-    return [overlay imageByCompositingOverImage:image];
-}
-
+/*!
+ Starts a capture sequence and starts a timer that will enable border detection for the set refresh rate.
+ */
 - (void)start
 {
   [super start];
@@ -92,6 +83,9 @@
   _lastDetectionRate = _detectionRefreshRateInMS;
 }
 
+/*!
+ Stops the capture session and stops the timer
+ */
 - (void)stop
 {
   [super stop];
@@ -99,44 +93,50 @@
   [_borderDetectTimeKeeper invalidate];
 }
 
-- (void)setDetectionRefreshRateInMS:(NSInteger)detectionRefreshRateInMS
+/*!
+ Runs each frame the image is being pushed to the preview layer
+ */
+-(CIImage *)processOutput:(CIImage *)image
 {
-    _detectionRefreshRateInMS = detectionRefreshRateInMS;
+  if (self.isBorderDetectionEnabled)
+  {
+    if (_borderDetectLastRectangleFeature)
+    {
+      _imageDedectionConfidence += .5;
+    }
+    else
+    {
+      _imageDedectionConfidence = 0.0f;
+    }
+    
+    if (_borderDetectFrame)
+    {
+      CIImage * detectionImage = [image imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
+      _borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:detectionImage] image:detectionImage];
+      _borderDetectLastRectangleBounds = detectionImage.extent;
+      _borderDetectFrame = NO;
+    }
+  }
+  return [super processOutput:image];
 }
 
+// MARK: Capture
+/*!
+ Captures the current frame from the camera, if it has detected a border, then it will crop the image and send the cropped image and original image to the
+ completion handler.
+ */
 - (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler
 {
   [super captureImageWithCompletionHander:^(CIImage* enhancedImage){
     int orientation = [self getOrientationForImage];
-
     if (self.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(self->_imageDedectionConfidence))
     {
-        CIRectangleFeature *rectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:enhancedImage]];
-
-        if (rectangleFeature)
+      if (self->_borderDetectLastRectangleFeature)
         {
-          CIImage *croppedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:rectangleFeature];
-          CGFloat rectHeight;
-          CGFloat rectWidth;
-          if ([self isPortraitOrientation]) {
-            // Portrait Layout (height/width is normal)
-            rectHeight = croppedImage.extent.size.height;
-            rectWidth = croppedImage.extent.size.width;
-          } else {
-            // Landscape layout (height/width is reversed
-            rectHeight = croppedImage.extent.size.width;
-            rectWidth = croppedImage.extent.size.height;
-          }
-          
-          UIGraphicsBeginImageContext(CGSizeMake(rectHeight, rectWidth));
-          [
-           [UIImage imageWithCIImage:croppedImage scale:1.0 orientation:orientation]
-           drawInRect:CGRectMake(0,0, rectHeight, rectWidth)
-          ];
-          UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+          CIImage *croppedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
+          UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:orientation];
           UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale:1.0 orientation:orientation];
-          UIGraphicsEndImageContext();
-          completionHandler(image, initialImage, rectangleFeature);
+          completionHandler(image, initialImage, self->_borderDetectLastRectangleFeature);
         }
     } else {
         UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale:1.0 orientation:orientation];
@@ -145,13 +145,20 @@
   }];
 }
 
-- (CIImage *)correctPerspectiveForImage:(CIImage *)image withFeatures:(CIRectangleFeature *)rectangleFeature
+/*!
+ Crops the image for the given coordinates, correcting its perspective.
+ */
+- (CIImage *)correctPerspectiveForImage:(CIImage *)image withFeatures:(CIRectangleFeature *)rectangleFeature fromBounds:(CGRect)bounds
 {
+  
+  float xScale = image.extent.size.width / bounds.size.width;
+  float yScale = image.extent.size.height / bounds.size.height;
+  
   NSMutableDictionary *rectangleCoordinates = [NSMutableDictionary new];
-  CGPoint newLeft = CGPointMake(rectangleFeature.topLeft.x + 30, rectangleFeature.topLeft.y);
-  CGPoint newRight = CGPointMake(rectangleFeature.topRight.x, rectangleFeature.topRight.y);
-  CGPoint newBottomLeft = CGPointMake(rectangleFeature.bottomLeft.x + 30, rectangleFeature.bottomLeft.y);
-  CGPoint newBottomRight = CGPointMake(rectangleFeature.bottomRight.x, rectangleFeature.bottomRight.y);
+  CGPoint newLeft = CGPointMake(rectangleFeature.topLeft.x * xScale, rectangleFeature.topLeft.y * yScale);
+  CGPoint newRight = CGPointMake(rectangleFeature.topRight.x * xScale, rectangleFeature.topRight.y * yScale);
+  CGPoint newBottomLeft = CGPointMake(rectangleFeature.bottomLeft.x * xScale, rectangleFeature.bottomLeft.y * yScale);
+  CGPoint newBottomRight = CGPointMake(rectangleFeature.bottomRight.x * xScale, rectangleFeature.bottomRight.y * yScale);
 
 
   rectangleCoordinates[@"inputTopLeft"] = [CIVector vectorWithCGPoint:newLeft];
@@ -162,6 +169,9 @@
   return [image imageByApplyingFilter:@"CIPerspectiveCorrection" withInputParameters:rectangleCoordinates];
 }
 
+/*!
+ Gets the orientation that the image should be set to
+ */
 - (int)getOrientationForImage
 {
   switch ([UIApplication sharedApplication].statusBarOrientation) {
@@ -178,33 +188,11 @@
   }
 }
 
-- (bool)isPortraitOrientation
-{
-  switch ([UIApplication sharedApplication].statusBarOrientation) {
-  case UIDeviceOrientationPortrait:
-      return true;
-  case UIDeviceOrientationPortraitUpsideDown:
-      return true;
-  case UIDeviceOrientationLandscapeLeft:
-      return false;
-  case UIDeviceOrientationLandscapeRight:
-      return false;
-  default:
-      return true;
-  }
-}
+// MARK: Rectangle Detection
 
-- (CIDetector *)rectangleDetetor
-{
-    static CIDetector *detector = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^
-    {
-          detector = [CIDetector detectorOfType:CIDetectorTypeRectangle context:nil options:@{CIDetectorAccuracy : CIDetectorAccuracyLow,CIDetectorTracking : @(YES)}];
-    });
-    return detector;
-}
-
+/*!
+ Gets a rectangle detector that can be used to plug an image into and find the rectangles from
+ */
 - (CIDetector *)highAccuracyRectangleDetector
 {
     static CIDetector *detector = nil;
@@ -216,7 +204,10 @@
     return detector;
 }
 
-- (CIRectangleFeature *)biggestRectangleInRectangles:(NSArray *)rectangles
+/*!
+ Finds the best fitting rectangle from the list of rectangles found in the image
+ */
+- (CIRectangleFeature *)biggestRectangleInRectangles:(NSArray *)rectangles image:(CIImage *)image
 {
     if (![rectangles count]) return nil;
 
@@ -242,14 +233,18 @@
             biggestRectangle = rect;
         }
     }
+  
 
     if (self.delegate) {
-        [self.delegate didDetectRectangle:biggestRectangle withType:[self typeForRectangle:biggestRectangle]];
+      [self.delegate didDetectRectangle:biggestRectangle withType:[self typeForRectangle:biggestRectangle] image:image confidence: _imageDedectionConfidence];
     }
 
     return biggestRectangle;
 }
 
+/*!
+ Determines the potential quality of the contents of a rectangle
+ */
 - (ScannerRectangleType) typeForRectangle: (CIRectangleFeature*) rectangle {
   UIView *previewLayerView = [super getPreviewLayerView];
   if (fabs(rectangle.topRight.y - rectangle.topLeft.y) > 100 ||
@@ -266,6 +261,9 @@
   return RCIPDFRectangeTypeGood;
 }
 
+/*!
+ Checks if the confidence of the current rectangle is above a threshold. The higher, the more likely the rectangle is the desired object to be scanned.
+ */
 BOOL isRectangleDetectionConfidenceHighEnough(float confidence)
 {
     return (confidence > 1.0);

@@ -27,43 +27,42 @@ The capture session used for scanning documents.
 /*!
 @property captureDevice
 @abstract
-Represents the physical device that is used for scanning documents (back camera for example).
+Represents the physical device that is used (back camera for example).
 */
 @property (nonatomic,strong) AVCaptureDevice *captureDevice;
 
 /*!
+@property deviceInput
+@abstract
+Represents the input from the camera device
+*/
+@property (nonatomic, strong) AVCaptureDeviceInput* deviceInput;
+
+/*!
  @property stillImageOutput
  @abstract
- Used for still image capture prior to iOS 10
+ Used for still image capture
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 @property (nonatomic, strong) AVCaptureStillImageOutput *stillImageOutput;
-#pragma GCC diagnostic pop
-
-/*!
- @property stillImageCaptureBlock
- @abstract
- Reference to the block passed in when capturing a still image.
- */
-@property (nonatomic, copy) void (^stillImageCaptureBlock)(UIImage *image, NSError *error);
-
-/*!
- @property output
- @abstract
- Property used for capturing still photos during document capture.
- */
-@property (nonatomic, strong) AVCapturePhotoOutput *output NS_AVAILABLE_IOS(10.0);
-
 
 @end
 
 
-
+/*!
+ Handles Generic camera device setup and capture
+ */
 @implementation CameraDeviceController
 {
-    GLuint _renderBuffer;
-    GLKView *_glkView;
+  GLuint _renderBuffer;
+  GLKView *_glkView;
+  NSMutableDictionary *_deviceConfiguration;
+}
+
+- (instancetype)init {
+  self = [super init];
+  [self setupCameraView];
+  [self start];
+  return self;
 }
 
 - (void)awakeFromNib
@@ -74,203 +73,32 @@ Represents the physical device that is used for scanning documents (back camera 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_foregroundMode) name:UIApplicationDidBecomeActiveNotification object:nil];
 }
 
+/*!
+ Called When the app enters the background
+*/
 - (void)_backgroundMode
 {
-    self.forceStop = YES;
+  self.forceStop = YES;
+  [self setEnableTorch: NO];
 }
 
+/*!
+ Called When the app enters the foreground
+*/
 - (void)_foregroundMode
 {
-    self.forceStop = NO;
-}
-
-- (UIView *)getPreviewLayerView
-{
-  return _glkView;
+  self.forceStop = NO;
 }
 
 - (void)dealloc
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (void)createGLKView
-{
-    if (self.context) return;
-
-    self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    GLKView *view = [[GLKView alloc] initWithFrame:self.bounds];
-    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    view.translatesAutoresizingMaskIntoConstraints = YES;
-    view.context = self.context;
-    view.contentScaleFactor = 1.0f;
-    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
-    [self insertSubview:view atIndex:0];
-    _glkView = view;
-    glGenRenderbuffers(1, &_renderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, _renderBuffer);
-    self._coreImageContext = [CIContext contextWithEAGLContext:self.context];
-    [EAGLContext setCurrentContext:self.context];
-}
-
-- (void)setupCameraView
-{
-    [self createGLKView];
-
-    AVCaptureDevice *device = nil;
-    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-    for (AVCaptureDevice *possibleDevice in devices) {
-        if (self.useFrontCam) {
-            if ([possibleDevice position] == AVCaptureDevicePositionFront) {
-                device = possibleDevice;
-            }
-        } else {
-            if ([possibleDevice position] != AVCaptureDevicePositionFront) {
-                device = possibleDevice;
-            }
-        }
-    }
-  
-    if (!device) return;
-  
-    [self flashEnabledHandler:([device hasTorch] && [device hasFlash])];
-
-    AVCaptureSession *session = [[AVCaptureSession alloc] init];
-    self.captureSession = session;
-    [session beginConfiguration];
-    self.captureDevice = device;
-
-    NSError *error = nil;
-    // Also requests permission
-    AVCaptureDeviceInput* input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
-    session.sessionPreset = AVCaptureSessionPresetPhoto;
-    [session addInput:input];
-
-    AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
-    [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
-    [dataOutput setVideoSettings:@{(id)kCVPixelBufferPixelFormatTypeKey:@(kCVPixelFormatType_32BGRA)}];
-    [dataOutput setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
-    [session addOutput:dataOutput];
-
-    self.stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-    [session addOutput:self.stillImageOutput];
-
-    AVCaptureConnection *connection = [dataOutput.connections firstObject];
-    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
-    [connection setVideoOrientation:[self captureOrientationForInterfaceOrientation:orientation]];
-
-    if (device.isFlashAvailable)
-    {
-        [device lockForConfiguration:nil];
-        [device setFlashMode:AVCaptureFlashModeOff];
-        [device unlockForConfiguration];
-
-        if ([device isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
-        {
-            [device lockForConfiguration:nil];
-            [device setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
-            [device unlockForConfiguration];
-        }
-    }
-
-    [self addObservers];
-    [session commitConfiguration];
-}
-
-- (void)handleApplicationDidChangeStatusBarNotification:(NSNotification *)notification {
-    [self refreshVideoOrientation];
-}
-
-- (void)refreshVideoOrientation {
-    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
-  [[[self.captureSession.outputs firstObject].connections firstObject] setVideoOrientation:[self captureOrientationForInterfaceOrientation:orientation]];
-}
-
-- (AVCaptureVideoOrientation)captureOrientationForInterfaceOrientation:(UIInterfaceOrientation)deviceOrientation {
-  switch (deviceOrientation) {
-    case UIInterfaceOrientationPortrait:
-      return AVCaptureVideoOrientationPortrait;
-    case UIInterfaceOrientationPortraitUpsideDown:
-      return AVCaptureVideoOrientationPortraitUpsideDown;
-    case UIInterfaceOrientationLandscapeLeft:
-      return AVCaptureVideoOrientationLandscapeLeft;
-    case UIInterfaceOrientationLandscapeRight:
-      return AVCaptureVideoOrientationLandscapeRight;
-    default:
-      return AVCaptureVideoOrientationPortrait;
-    }
-}
-
-- (void)addObservers {
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleApplicationDidChangeStatusBarNotification:)
-                                                 name:UIApplicationDidChangeStatusBarOrientationNotification
-                                               object:nil];
-}
-
-- (void)setCameraViewType:(RCIPDFCameraViewType)cameraViewType
-{
-    UIBlurEffect * effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-    UIVisualEffectView *viewWithBlurredBackground =[[UIVisualEffectView alloc] initWithEffect:effect];
-    viewWithBlurredBackground.frame = self.bounds;
-    [self insertSubview:viewWithBlurredBackground aboveSubview:_glkView];
-
-    _cameraViewType = cameraViewType;
-
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^
-    {
-        [viewWithBlurredBackground removeFromSuperview];
-    });
-}
-
--(CIImage *)processOutput:(CIImage *)image
-{
-  if (self.cameraViewType == RCIPDFCameraViewTypeNormal)
-  {
-    return [self filteredImageUsingEnhanceFilterOnImage:image];
-  }
-  return [self filteredImageUsingContrastFilterOnImage:image];
-}
-
--(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
-{
-    if (self.forceStop) return;
-    if (self._isStopped || self._isCapturing || !CMSampleBufferIsValid(sampleBuffer)) return;
-
-    CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
-
-    CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
-  
-    image = [self processOutput:image];
-    if (self.context && self._coreImageContext)
-    {
-        [self._coreImageContext drawImage:image inRect:self.bounds fromRect:image.extent];
-        [self.context presentRenderbuffer:GL_RENDERBUFFER];
-
-        [_glkView setNeedsDisplay];
-    }
-}
-
-- (void)start
-{
-    self._isStopped = NO;
-    [self.captureSession startRunning];
-    [self hideGLKView:NO completion:nil];
-}
-
-- (void)stop
-{
-    self._isStopped = YES;
-    [self.captureSession stopRunning];
-    [self hideGLKView:YES completion:nil];
-}
-
-- (void)flashEnabledHandler:(BOOL)deviceHasFlash
-{
-  
-}
-
+// MARK: Setters
+/*!
+ Toggles the flash on the camera device
+ */
 - (void)setEnableTorch:(BOOL)enableTorch
 {
     _enableTorch = enableTorch;
@@ -291,81 +119,387 @@ Represents the physical device that is used for scanning documents (back camera 
     }
 }
 
+/*!
+ Starts the capture session
+ */
+- (void)start
+{
+    self._isStopped = NO;
+    [self.captureSession startRunning];
+    [self hidePreviewLayerView:NO completion:nil];
+}
+
+/*!
+ Stops the capture session
+ */
+- (void)stop
+{
+    self._isStopped = YES;
+    [self.captureSession stopRunning];
+    [self hidePreviewLayerView:YES completion:nil];
+}
+
+/*!
+ Uses the front camera
+ */
 - (void)setUseFrontCam:(BOOL)useFrontCam
 {
-    _useFrontCam = useFrontCam;
+  _useFrontCam = useFrontCam;
+  if (self._isStopped == NO) {
     [self stop];
     [self setupCameraView];
     [self start];
+  }
 }
 
-
-- (void)setContrast:(float)contrast
+- (void)setFilter:(int)filter
 {
-
-    _contrast = contrast;
+  _filter = filter;
 }
 
-- (void)setSaturation:(float)saturation
+- (void)_setDeviceConfigurationFlashAvailable: (BOOL) isAvailable{
+  [_deviceConfiguration setValue:isAvailable ? @TRUE : @FALSE forKey:@"flashIsAvailable"];
+}
+
+- (void)_setDeviceConfigurationPermissionToUseCamera: (BOOL) granted{
+  [_deviceConfiguration setValue:granted ? @TRUE : @FALSE forKey:@"permissionToUseCamera"];
+}
+
+- (void)_setDeviceConfigurationHasCamera: (BOOL) isAvailable{
+  [_deviceConfiguration setValue:isAvailable ? @TRUE : @FALSE forKey:@"hasCamera"];
+}
+
+/*!
+ Sets the inital device configuration
+ */
+- (void)_resetDeviceConfiguration
 {
-    _saturation = saturation;
+  _deviceConfiguration = [[NSMutableDictionary alloc] init];
+  [self _setDeviceConfigurationFlashAvailable:NO];
+  [self _setDeviceConfigurationPermissionToUseCamera:NO ];
+  [self _setDeviceConfigurationHasCamera:NO];
+  
+  [_deviceConfiguration setObject: [NSArray arrayWithObjects:[self getColorFilter], [self getGreyScaleFilter], [self getBlackAndWHiteFilter], [self getPhotoFilter], nil] forKey:@"availableFilters"];
 }
 
-- (void)setBrightness:(float)brightness
+- (void)_commitDeviceConfiguration {
+  [self deviceDidSetup:_deviceConfiguration];
+}
+
+- (void)deviceDidSetup:(NSDictionary*) config {};
+
+/*!
+ Used to hide the output capture session preview layer
+ */
+- (void)hidePreviewLayerView:(BOOL)hidden completion:(void(^)(void))completion
 {
-    _brightness = brightness;
+    [UIView animateWithDuration:0.1 animations:^
+    {
+      self->_glkView.alpha = (hidden) ? 0.0 : 1.0;
+    }
+    completion:^(BOOL finished)
+    {
+        if (!completion) return;
+        completion();
+    }];
 }
 
+// MARK: Getters
+
+/*!
+ @return The view that is used to preview the camera output
+ */
+- (UIView *)getPreviewLayerView
+{
+  return _glkView;
+}
+
+- (NSDictionary *)getColorFilter{
+  return @{
+    @"name": @"Color",
+    @"id": @1
+  };
+}
+
+- (NSDictionary *)getGreyScaleFilter{
+  return @{
+    @"name": @"Greyscale",
+    @"id": @2
+  };
+}
+
+- (NSDictionary *)getBlackAndWHiteFilter{
+  return @{
+    @"name": @"Black & White",
+    @"id": @3
+  };
+}
+
+- (NSDictionary *)getPhotoFilter{
+  return @{
+    @"name": @"Photo",
+    @"id": @4
+  };
+}
+
+- (CGRect)getBounds{
+  return self.bounds;
+}
+
+
+/*!
+ Gets a hardware camera device.  If useFrontCam is true, it will find the front camera
+ @return A camera hardware object or nil if not found
+ */
+- (AVCaptureDevice *)getCameraDevice{
+  NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+  for (AVCaptureDevice *possibleDevice in devices) {
+    if (self.useFrontCam) {
+      if ([possibleDevice position] == AVCaptureDevicePositionFront) return possibleDevice;
+    } else {
+      if ([possibleDevice position] != AVCaptureDevicePositionFront) return possibleDevice;
+    }
+  }
+  return nil;
+}
+
+// MARK: Setup
+
+/*!
+ Creates a session for the camera device and outputs it to a preview view.
+ @note Called on view did load
+ */
+- (void)setupCameraView
+{
+  [self createPreviewViewLayer];
+  [self _resetDeviceConfiguration];
+  [self setupCamera];
+  [self _commitDeviceConfiguration];
+  [self listenForOrientationChanges];
+}
+
+/*!
+ Creates the preview layer view for the camera output.
+ @discussion
+ Produces a GLKView which the camera output is drawn on.  There is a possibility that we could switch
+ to an AVCaptureVideoPreviewLayer instead.  This is supposed to handle screen rotation better from what
+ I've seen. This is how Apple's AVCam project does it as well.
+ */
+- (void)createPreviewViewLayer
+{
+    if (self.context) return;
+
+    self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    GLKView *view = [[GLKView alloc] initWithFrame:self.bounds];
+    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    view.translatesAutoresizingMaskIntoConstraints = YES;
+    view.context = self.context;
+    view.contentScaleFactor = 1.0f;
+    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    [self insertSubview:view atIndex:0];
+    _glkView = view;
+    glGenRenderbuffers(1, &_renderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _renderBuffer);
+    self._coreImageContext = [CIContext contextWithEAGLContext:self.context];
+    [EAGLContext setCurrentContext:self.context];
+}
+
+/*!
+ Sets up the hardware and capture session asking for permission to use the camera if needed.
+ */
+- (void)setupCamera {
+  if (![self setupCaptureDevice]) return;
+  if (![self setupInputCaptureFromDevice]) return;
+  
+  // Set up the capture session from the input
+  self.captureSession = [[AVCaptureSession alloc] init];
+  [self.captureSession beginConfiguration];
+  self.captureSession.sessionPreset = AVCaptureSessionPresetPhoto;
+  [self.captureSession addInput:self.deviceInput];
+
+  // Output session capture to queue
+  AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
+  [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
+  [dataOutput setVideoSettings:@{(id)kCVPixelBufferPixelFormatTypeKey:@(kCVPixelFormatType_32BGRA)}];
+  [dataOutput setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
+  [self.captureSession addOutput:dataOutput];
+
+  // Output session capture to still image output
+  self.stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
+  [self.captureSession addOutput:self.stillImageOutput];
+
+  // Correct the orientation of the output
+  [self setVideoOrientation];
+  
+  [self.captureSession commitConfiguration];
+}
+
+/*!
+ Finds a physical camera, configures it, and sets the captureDevice property to it
+ @return The captureDevice property value (If falsey, could not find a valid camera)
+ */
+- (AVCaptureDevice *)setupCaptureDevice{
+  self.captureDevice = [self getCameraDevice];
+  if (!self.captureDevice) return nil;
+  [self _setDeviceConfigurationHasCamera:YES];
+  [self _setDeviceConfigurationFlashAvailable:([self.captureDevice hasTorch] && [self.captureDevice hasFlash])];
+  
+  // Setup camera focus mode
+  if ([self.captureDevice isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
+  {
+    [self.captureDevice lockForConfiguration:nil];
+    [self.captureDevice setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
+    [self.captureDevice unlockForConfiguration];
+  }
+  
+  // Setup camera flash mode
+  if (self.captureDevice.isFlashAvailable)
+  {
+    [self.captureDevice lockForConfiguration:nil];
+    [self.captureDevice setFlashMode:AVCaptureFlashModeOff];
+    [self.captureDevice unlockForConfiguration];
+  }
+  return self.captureDevice;
+}
+
+/*!
+ Gets input from the device (will ask for permission) and sets the deviceInput property.
+ @return The deviceInput property value (If falsey, permission is not granted)
+ */
+- (AVCaptureDeviceInput *) setupInputCaptureFromDevice{
+  NSError *error = nil;
+  self.deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:&error];
+  [self _setDeviceConfigurationPermissionToUseCamera:self.deviceInput];
+  return self.deviceInput;
+}
+
+// MARK: Orientation
+
+/*!
+ Sets the current capture session output orientation to the device's orientation
+ */
+- (void)setVideoOrientation {
+  UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+  AVCaptureVideoOrientation videoOrientation;
+  switch (orientation) {
+    case UIInterfaceOrientationPortrait:
+      videoOrientation = AVCaptureVideoOrientationPortrait;
+      break;
+    case UIInterfaceOrientationPortraitUpsideDown:
+      videoOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+      break;
+    case UIInterfaceOrientationLandscapeLeft:
+      videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+      break;
+    case UIInterfaceOrientationLandscapeRight:
+      videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+      break;
+    default:
+      videoOrientation = AVCaptureVideoOrientationPortrait;
+  }
+  
+  [[[self.captureSession.outputs firstObject].connections firstObject] setVideoOrientation:videoOrientation];
+}
+
+/*!
+ Listens for device orientation changes.  On change, it will change the orientation of the video preview output
+ */
+- (void)listenForOrientationChanges {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleApplicationDidChangeStatusBarNotification:)
+                                                 name:UIApplicationDidChangeStatusBarOrientationNotification
+                                               object:nil];
+}
+
+/*!
+ Reponds to status bar orientation change events
+ */
+- (void)handleApplicationDidChangeStatusBarNotification:(NSNotification *)notification {
+    [self setVideoOrientation];
+}
+
+// MARK: Auto Focus
+/*!
+ Focuses on a point of interest where the user tapped.
+ */
 - (void)focusAtPoint:(CGPoint)point completionHandler:(void(^)(void))completionHandler
 {
-    AVCaptureDevice *device = self.captureDevice;
-    CGPoint pointOfInterest = CGPointZero;
-    CGSize frameSize = self.bounds.size;
-    pointOfInterest = CGPointMake(point.y / frameSize.height, 1.f - (point.x / frameSize.width));
+  AVCaptureDevice *device = self.captureDevice;
+  CGPoint pointOfInterest = CGPointZero;
+  CGSize frameSize = self.bounds.size;
+  pointOfInterest = CGPointMake(point.y / frameSize.height, 1.f - (point.x / frameSize.width));
 
-    if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:AVCaptureFocusModeAutoFocus])
+  if ([device isFocusPointOfInterestSupported] && [device isFocusModeSupported:AVCaptureFocusModeAutoFocus])
+  {
+    NSError *error;
+    if ([device lockForConfiguration:&error])
     {
-        NSError *error;
-        if ([device lockForConfiguration:&error])
-        {
-            if ([device isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
-            {
-                [device setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
-                [device setFocusPointOfInterest:pointOfInterest];
-            }
+      if ([device isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
+      {
+        [device setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
+        [device setFocusPointOfInterest:pointOfInterest];
+      }
 
-            if([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:AVCaptureExposureModeContinuousAutoExposure])
-            {
-                [device setExposurePointOfInterest:pointOfInterest];
-                [device setExposureMode:AVCaptureExposureModeContinuousAutoExposure];
-                completionHandler();
-            }
-
-            [device unlockForConfiguration];
-        }
-    }
-    else
-    {
+      if([device isExposurePointOfInterestSupported] && [device isExposureModeSupported:AVCaptureExposureModeContinuousAutoExposure])
+      {
+        [device setExposurePointOfInterest:pointOfInterest];
+        [device setExposureMode:AVCaptureExposureModeContinuousAutoExposure];
         completionHandler();
+      }
+
+      [device unlockForConfiguration];
     }
+  }
+  else
+  {
+    completionHandler();
+  }
 }
 
+// MARK: previewLayer Output
 
+/*!
+ Processes the image output from the capture session.
+ @note Override this method to add additional processing
+ */
+-(CIImage *)processOutput:(CIImage *)image
+{
+  return [self applyFilters:image];
+}
+
+-(void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
+{
+  if (self.forceStop) return;
+  if (self._isStopped || self._isCapturing || !CMSampleBufferIsValid(sampleBuffer)) return;
+
+  CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
+
+  CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+  
+  image = [self processOutput:image];
+  float rectHeight = image.extent.size.height;
+  float rectWidth = image.extent.size.width;
+  
+//  CGRect imageRectangle = CGRectMake(0,0, rectHeight, rectWidth);
+  CGRect imageRectangle = self.bounds;
+  
+  if (self.context && self._coreImageContext)
+  {
+    [self._coreImageContext drawImage:image inRect:imageRectangle fromRect:image.extent];
+    [self.context presentRenderbuffer:GL_RENDERBUFFER];
+
+    [_glkView setNeedsDisplay];
+  }
+}
+
+// MARK: Capture Image
+
+/*!
+ Captures the current output from the capture session, applies some filters, and sends the CIImage to a completionHandler
+ */
 - (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler
 {
   if (self._isCapturing) return;
-
-  __weak typeof(self) weakSelf = self;
-
-  [weakSelf hideGLKView:YES completion:^
-  {
-    [weakSelf hideGLKView:NO completion:^
-    {
-      [weakSelf hideGLKView:YES completion:nil];
-    }];
-  }];
-
-  self._isCapturing = YES;
 
   AVCaptureConnection *videoConnection = nil;
   for (AVCaptureConnection *connection in self.stillImageOutput.connections)
@@ -380,48 +514,66 @@ Represents the physical device that is used for scanning documents (back camera 
     }
     if (videoConnection) break;
   }
-
+  
+  NSLog(@"Video Conn?");
+  if (!videoConnection) return;
+  NSLog(@"Video Conn FOUND");
+  [self hidePreviewLayerView:YES completion:nil];
+  self._isCapturing = YES;
+  NSLog(@"Pre Capture");
   [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error)
   {
+    NSLog(@"Capture Async");    
     NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageSampleBuffer];
     CIImage *enhancedImage = [CIImage imageWithData:imageData];
+    
+    enhancedImage = [self applyFilters:enhancedImage];
 
-    if (weakSelf.cameraViewType != RCIPDFCameraViewTypeBlackAndWhite)
-    {
-      enhancedImage = [self filteredImageUsingEnhanceFilterOnImage:enhancedImage];
-    }
-    else
-    {
-      enhancedImage = [self filteredImageUsingContrastFilterOnImage:enhancedImage];
-    }
-
-    [weakSelf hideGLKView:NO completion:nil];
+    [self hidePreviewLayerView:NO completion:nil];
+    NSLog(@"Capture Complete");
     completionHandler(enhancedImage);
     self._isCapturing = NO;
   }];
 }
 
-- (void)hideGLKView:(BOOL)hidden completion:(void(^)(void))completion
-{
-    [UIView animateWithDuration:0.1 animations:^
-    {
-      self->_glkView.alpha = (hidden) ? 0.0 : 1.0;
-    }
-    completion:^(BOOL finished)
-    {
-        if (!completion) return;
-        completion();
-    }];
+// MARK: Filters
+
+/*!
+ Applies filters to the CIImage based on configuration
+ */
+- (CIImage *)applyFilters:(CIImage *)image{
+  if (self.filter == 2) return [self applyGreyScaleFilterToImage:image];
+  if (self.filter == 3) return [self applyBlackAndWhiteFilterToImage:image];
+  if (self.filter == 4) return image;
+  return [self applyColorFilterToImage:image];
 }
 
-- (CIImage *)filteredImageUsingEnhanceFilterOnImage:(CIImage *)image
+/*!
+ Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ */
+- (CIImage *)applyGreyScaleFilterToImage:(CIImage *)image
 {
-    return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, @"inputBrightness", @(self.brightness), @"inputContrast", @(self.contrast), @"inputSaturation", @(self.saturation), nil].outputImage;
+  return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0), kCIInputContrastKey, @(1), kCIInputSaturationKey, @(0), nil].outputImage;
 }
 
-- (CIImage *)filteredImageUsingContrastFilterOnImage:(CIImage *)image
+/*!
+ Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ */
+- (CIImage *)applyBlackAndWhiteFilterToImage:(CIImage *)image
 {
-    return [CIFilter filterWithName:@"CIColorControls" withInputParameters:@{@"inputContrast":@(1.0),kCIInputImageKey:image}].outputImage;
+  return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0.4), kCIInputContrastKey, @(2), kCIInputSaturationKey, @(0), nil].outputImage;
+}
+
+/*!
+ Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ */
+- (CIImage *)applyColorFilterToImage:(CIImage *)image
+{
+  return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0.35), kCIInputContrastKey, @(1.9), kCIInputSaturationKey, @(0.75), nil].outputImage;
+}
+
+- (CIImage *)detectionFilter:(CIImage *)image {
+  return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0.6), kCIInputContrastKey, @(2), kCIInputSaturationKey, @(2), nil].outputImage;
 }
 
 @end

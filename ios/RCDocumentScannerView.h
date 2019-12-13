@@ -16,5 +16,6 @@
 - (void) capture;
 - (void) startCamera;
 - (void) stopCamera;
+- (void) cleanup;
 
 @end

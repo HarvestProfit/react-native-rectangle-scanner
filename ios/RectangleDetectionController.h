@@ -18,7 +18,7 @@ typedef NS_ENUM(NSInteger, ScannerRectangleType)
 
 @protocol RectangleDetectionDelegate <NSObject>
 
-- (void) didDetectRectangle: (CIRectangleFeature*) rectangle withType: (ScannerRectangleType) type;
+- (void) didDetectRectangle: (CIRectangleFeature*) rectangle withType: (ScannerRectangleType) type image: (CIImage *) image confidence: (NSInteger) confidence;
 
 @end
 
@@ -36,7 +36,6 @@ typedef NS_ENUM(NSInteger, ScannerRectangleType)
 - (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler;
 
 - (CIImage *)processOutput:(CIImage *)image;
-@property (nonatomic, strong) UIColor* overlayColor;
 @property (nonatomic, assign) NSInteger detectionRefreshRateInMS;
 
 @end
