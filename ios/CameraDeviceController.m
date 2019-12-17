@@ -243,21 +243,21 @@ Represents the input from the camera device
 }
 
 /*!
- Gets the orientation that the image should be set to
+ Gets the orientation that the image should be set to before cropping and transforming
  */
-- (int)getOrientationForCaptureImage
+- (int)getCGImageOrientationForCaptureImage
 {
   switch ([UIApplication sharedApplication].statusBarOrientation) {
     case UIDeviceOrientationPortrait:
-        return UIImageOrientationRight;
+        return kCGImagePropertyOrientationUp;
     case UIDeviceOrientationPortraitUpsideDown:
-        return UIImageOrientationLeft;
+        return kCGImagePropertyOrientationDown;
     case UIDeviceOrientationLandscapeLeft:
-        return UIImageOrientationUp;
+        return kCGImagePropertyOrientationLeft;
     case UIDeviceOrientationLandscapeRight:
-        return UIImageOrientationDown;
+        return kCGImagePropertyOrientationRight;
     default:
-        return UIImageOrientationRight;
+        return kCGImagePropertyOrientationUp;
     }
 }
 
@@ -413,6 +413,11 @@ Represents the input from the camera device
   [[[self.captureSession.outputs firstObject].connections firstObject] setVideoOrientation:videoOrientation];
 }
 
+- (BOOL)isLandscapeOrientation:(int) orientation {
+  if (orientation == AVCaptureVideoOrientationPortrait || orientation == AVCaptureVideoOrientationPortraitUpsideDown) return YES;
+  return NO;
+}
+
 /*!
  Listens for device orientation changes.  On change, it will change the orientation of the video preview output
  */
@@ -484,20 +489,21 @@ Represents the input from the camera device
   if (self.forceStop) return;
   if (self._isStopped || self._isCapturing || !CMSampleBufferIsValid(sampleBuffer)) return;
 
+  
   CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
 
   CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
   
-  image = [self processOutput:image];
-  float rectHeight = image.extent.size.height;
-  float rectWidth = image.extent.size.width;
   
-//  CGRect imageRectangle = CGRectMake(0,0, rectHeight, rectWidth);
-  CGRect imageRectangle = self.bounds;
+  // Crop to fit screen
+  CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(CGSizeMake(self.bounds.size.width, self.bounds.size.height), image.extent);
+  image = [image imageByCroppingToRect:cropRect];
+  
+  image = [self processOutput:image];
   
   if (self.context && self._coreImageContext)
   {
-    [self._coreImageContext drawImage:image inRect:imageRectangle fromRect:image.extent];
+    [self._coreImageContext drawImage:image inRect:self.bounds fromRect:image.extent];
     [self.context presentRenderbuffer:GL_RENDERBUFFER];
 
     [_glkView setNeedsDisplay];
@@ -509,7 +515,7 @@ Represents the input from the camera device
 /*!
  Captures the current output from the capture session, applies some filters, and sends the CIImage to a completionHandler
  */
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage, int orientation))completionHandler
+- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler
 {
   if (self._isCapturing) return;
 
@@ -532,13 +538,21 @@ Represents the input from the camera device
   [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error)
   {
     NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageSampleBuffer];
-    int imageOrientation = [self getOrientationForCaptureImage];
+    CIImage *intialImage = [CIImage imageWithData:imageData];
+    intialImage = [intialImage imageByApplyingOrientation:[self getCGImageOrientationForCaptureImage]];
     
+    // Crop to fit screen size
+    CGSize screenSize = CGSizeMake(self.bounds.size.height, self.bounds.size.width);
+    CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(screenSize, intialImage.extent);
+
+    intialImage = [intialImage imageByCroppingToRect:cropRect];
+    intialImage = [intialImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-intialImage.extent.origin.x, -intialImage.extent.origin.y)];
+    
+    [self setEnableTorch: NO];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      CIImage *enhancedImage = [CIImage imageWithData:imageData];
-      enhancedImage = [self applyFilters:enhancedImage];
+      CIImage *enhancedImage = [self applyFilters:intialImage];
       self._isCapturing = NO;
-      completionHandler(enhancedImage, imageOrientation);
+      completionHandler(enhancedImage);
     });
   }];
 }

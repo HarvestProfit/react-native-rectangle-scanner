@@ -30,8 +30,6 @@
     NSInteger _detectionRefreshRateInMS;
 }
 
-// MARK: Getters
-
 // MARK: Setters
 
 /*!
@@ -146,18 +144,18 @@
  */
 - (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler
 {
-  [super captureImageWithCompletionHander:^(CIImage* enhancedImage, int orientation){
+  [super captureImageWithCompletionHander:^(CIImage* enhancedImage){
     if (self.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(self->_imageDedectionConfidence))
     {
       if (self->_borderDetectLastRectangleFeature)
         {
           CIImage *croppedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
-          UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:orientation];
-          UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale: 1.0 orientation:orientation];
+          UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:UIImageOrientationRight];
+          UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale: 1.0 orientation:UIImageOrientationRight];
           completionHandler(image, initialImage, self->_borderDetectLastRectangleFeature);
         }
     } else {
-        UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage];
+        UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale: 1.0 orientation:UIImageOrientationRight];
         completionHandler(initialImage, initialImage, nil);
     }
   }];

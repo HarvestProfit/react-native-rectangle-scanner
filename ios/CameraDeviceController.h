@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, CameraFilterTypes)
 
 - (void)focusAtPoint:(CGPoint)point completionHandler:(void(^)(void))completionHandler;
 
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage, int orientation))completionHandler;
+- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler;
 - (CIImage *)processOutput:(CIImage *)image;
 - (UIView *)getPreviewLayerView;
 - (CGRect)getBounds;
