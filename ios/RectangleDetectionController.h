@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "CameraDeviceController.h"
+#import <React/RCTViewManager.h>
 
 typedef NS_ENUM(NSInteger, ScannerRectangleType)
 {
@@ -16,22 +17,15 @@ typedef NS_ENUM(NSInteger, ScannerRectangleType)
     RCIPDFRectangeTypeTooFar
 };
 
-@protocol RectangleDetectionDelegate <NSObject>
-
-- (void) didDetectRectangle: (CIRectangleFeature*) rectangle withType: (ScannerRectangleType) type image: (CIImage *) image confidence: (NSInteger) confidence;
-
-@end
-
 @interface RectangleDetectionController : CameraDeviceController
 
 - (void)setupCameraView;
 
 - (void)start;
 - (void)stop;
+- (void)rectangleWasDetected:(NSDictionary *)detection;
 
 @property (nonatomic,assign,getter=isBorderDetectionEnabled) BOOL enableBorderDetection;
-
-@property (weak, nonatomic) id<RectangleDetectionDelegate> delegate;
 
 - (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler;
 

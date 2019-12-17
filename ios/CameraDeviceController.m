@@ -58,13 +58,6 @@ Represents the input from the camera device
   NSMutableDictionary *_deviceConfiguration;
 }
 
-- (instancetype)init {
-  self = [super init];
-  [self setupCameraView];
-  [self start];
-  return self;
-}
-
 - (void)awakeFromNib
 {
     [super awakeFromNib];
@@ -101,23 +94,23 @@ Represents the input from the camera device
  */
 - (void)setEnableTorch:(BOOL)enableTorch
 {
-    _enableTorch = enableTorch;
+  _enableTorch = enableTorch;
 
-    AVCaptureDevice *device = self.captureDevice;
-    if ([device hasTorch] && [device hasFlash])
-    {
-        [device lockForConfiguration:nil];
-        if (enableTorch)
-        {
-            [device setTorchMode:AVCaptureTorchModeOn];
-        }
-        else
-        {
-            [device setTorchMode:AVCaptureTorchModeOff];
-        }
-        [device unlockForConfiguration];
+  AVCaptureDevice *device = self.captureDevice;
+  if ([device hasTorch] && [device hasFlash]) {
+    [device lockForConfiguration:nil];
+    if (enableTorch) {
+      [device setTorchMode:AVCaptureTorchModeOn];
+    } else {
+      [device setTorchMode:AVCaptureTorchModeOff];
     }
+    [device unlockForConfiguration];
+  }
+  
+  [self torchWasChanged:enableTorch];
 }
+
+- (void)torchWasChanged:(BOOL)enableTorch {}
 
 /*!
  Starts the capture session
@@ -140,31 +133,30 @@ Represents the input from the camera device
 }
 
 /*!
- Uses the front camera
+ Sets the currently active filter
  */
-- (void)setUseFrontCam:(BOOL)useFrontCam
+- (void)setFilterId:(int)filterId
 {
-  _useFrontCam = useFrontCam;
-  if (self._isStopped == NO) {
-    [self stop];
-    [self setupCameraView];
-    [self start];
-  }
+  _filterId = filterId;
 }
 
-- (void)setFilter:(int)filter
-{
-  _filter = filter;
-}
-
+/*!
+ Sets the device configuration flash setting
+ */
 - (void)_setDeviceConfigurationFlashAvailable: (BOOL) isAvailable{
   [_deviceConfiguration setValue:isAvailable ? @TRUE : @FALSE forKey:@"flashIsAvailable"];
 }
 
+/*!
+ Sets the device configuration permission setting
+ */
 - (void)_setDeviceConfigurationPermissionToUseCamera: (BOOL) granted{
   [_deviceConfiguration setValue:granted ? @TRUE : @FALSE forKey:@"permissionToUseCamera"];
 }
 
+/*!
+ Sets the device configuration camera availablility
+ */
 - (void)_setDeviceConfigurationHasCamera: (BOOL) isAvailable{
   [_deviceConfiguration setValue:isAvailable ? @TRUE : @FALSE forKey:@"hasCamera"];
 }
@@ -182,11 +174,15 @@ Represents the input from the camera device
   [_deviceConfiguration setObject: [NSArray arrayWithObjects:[self getColorFilter], [self getGreyScaleFilter], [self getBlackAndWHiteFilter], [self getPhotoFilter], nil] forKey:@"availableFilters"];
 }
 
+
+/*!
+ Called after the camera and session are set up. This lets you check if a camera is found and permission is granted to use it.
+ */
 - (void)_commitDeviceConfiguration {
-  [self deviceDidSetup:_deviceConfiguration];
+  [self deviceWasSetup:_deviceConfiguration];
 }
 
-- (void)deviceDidSetup:(NSDictionary*) config {};
+- (void)deviceWasSetup:(NSDictionary *)config {}
 
 /*!
  Used to hide the output capture session preview layer
@@ -246,6 +242,25 @@ Represents the input from the camera device
   return self.bounds;
 }
 
+/*!
+ Gets the orientation that the image should be set to
+ */
+- (int)getOrientationForCaptureImage
+{
+  switch ([UIApplication sharedApplication].statusBarOrientation) {
+    case UIDeviceOrientationPortrait:
+        return UIImageOrientationRight;
+    case UIDeviceOrientationPortraitUpsideDown:
+        return UIImageOrientationLeft;
+    case UIDeviceOrientationLandscapeLeft:
+        return UIImageOrientationUp;
+    case UIDeviceOrientationLandscapeRight:
+        return UIImageOrientationDown;
+    default:
+        return UIImageOrientationRight;
+    }
+}
+
 
 /*!
  Gets a hardware camera device.  If useFrontCam is true, it will find the front camera
@@ -254,11 +269,7 @@ Represents the input from the camera device
 - (AVCaptureDevice *)getCameraDevice{
   NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
   for (AVCaptureDevice *possibleDevice in devices) {
-    if (self.useFrontCam) {
-      if ([possibleDevice position] == AVCaptureDevicePositionFront) return possibleDevice;
-    } else {
-      if ([possibleDevice position] != AVCaptureDevicePositionFront) return possibleDevice;
-    }
+    if ([possibleDevice position] != AVCaptureDevicePositionFront) return possibleDevice;
   }
   return nil;
 }
@@ -276,6 +287,7 @@ Represents the input from the camera device
   [self setupCamera];
   [self _commitDeviceConfiguration];
   [self listenForOrientationChanges];
+  self._cameraIsSetup = YES;
 }
 
 /*!
@@ -497,7 +509,7 @@ Represents the input from the camera device
 /*!
  Captures the current output from the capture session, applies some filters, and sends the CIImage to a completionHandler
  */
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler
+- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage, int orientation))completionHandler
 {
   if (self._isCapturing) return;
 
@@ -515,24 +527,19 @@ Represents the input from the camera device
     if (videoConnection) break;
   }
   
-  NSLog(@"Video Conn?");
   if (!videoConnection) return;
-  NSLog(@"Video Conn FOUND");
-  [self hidePreviewLayerView:YES completion:nil];
   self._isCapturing = YES;
-  NSLog(@"Pre Capture");
   [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error)
   {
-    NSLog(@"Capture Async");    
     NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageSampleBuffer];
-    CIImage *enhancedImage = [CIImage imageWithData:imageData];
+    int imageOrientation = [self getOrientationForCaptureImage];
     
-    enhancedImage = [self applyFilters:enhancedImage];
-
-    [self hidePreviewLayerView:NO completion:nil];
-    NSLog(@"Capture Complete");
-    completionHandler(enhancedImage);
-    self._isCapturing = NO;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      CIImage *enhancedImage = [CIImage imageWithData:imageData];
+      enhancedImage = [self applyFilters:enhancedImage];
+      self._isCapturing = NO;
+      completionHandler(enhancedImage, imageOrientation);
+    });
   }];
 }
 
@@ -542,9 +549,9 @@ Represents the input from the camera device
  Applies filters to the CIImage based on configuration
  */
 - (CIImage *)applyFilters:(CIImage *)image{
-  if (self.filter == 2) return [self applyGreyScaleFilterToImage:image];
-  if (self.filter == 3) return [self applyBlackAndWhiteFilterToImage:image];
-  if (self.filter == 4) return image;
+  if (self.filterId == 2) return [self applyGreyScaleFilterToImage:image];
+  if (self.filterId == 3) return [self applyBlackAndWhiteFilterToImage:image];
+  if (self.filterId == 4) return image;
   return [self applyColorFilterToImage:image];
 }
 

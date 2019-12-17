@@ -15,42 +15,89 @@
 
 RCT_EXPORT_MODULE(RCPdfScannerManager)
 
-RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTBubblingEventBlock)
-RCT_EXPORT_VIEW_PROPERTY(onRectangleDetect, RCTBubblingEventBlock)
-RCT_EXPORT_VIEW_PROPERTY(onDeviceSetup, RCTBubblingEventBlock)
 
-
+/*!
+ Turns on the flash light
+ */
 RCT_EXPORT_VIEW_PROPERTY(enableTorch, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(useFrontCam, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(useBase64, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(saveInAppDocument, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(captureOnDetect, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(detectionCountBeforeCapture, NSInteger)
-RCT_EXPORT_VIEW_PROPERTY(detectionRefreshRateInMS, NSInteger)
-RCT_EXPORT_VIEW_PROPERTY(quality, float)
-RCT_EXPORT_VIEW_PROPERTY(filter, int)
 
+/*!
+ The JPEG image quality of the final captured image (defaults to highest quality)
+ */
+RCT_EXPORT_VIEW_PROPERTY(capturedQuality, float)
+
+/*!
+ Determines what filter id to use (1, 2, 3, or 4)
+ */
+RCT_EXPORT_VIEW_PROPERTY(filterId, int)
+
+
+// MARK: Life cycle Actions
+/*!
+ Starts the camera.  If not setup, it will set up the device as well.
+ */
+RCT_EXPORT_METHOD(start) {
+  [_scannerView startCamera];
+}
+
+/*!
+ Stops the camera. It does not call any cleanup actions though.
+ */
+RCT_EXPORT_METHOD(stop) {
+  [_scannerView stopCamera];
+}
+
+/*!
+ Cleans up any extra running camera stuff
+ */
+RCT_EXPORT_METHOD(cleanup) {
+  [_scannerView cleanup];
+}
+
+/*!
+ Stops the camera, reinitializes everything, and starts the camera.
+ */
+RCT_EXPORT_METHOD(refresh) {
+  [_scannerView cleanup];
+  [_scannerView startCamera];
+}
+
+/*!
+ Starts taking a picture.  This triggers a few events
+ */
 RCT_EXPORT_METHOD(capture) {
     [_scannerView capture];
 }
 
-RCT_EXPORT_METHOD(start) {
-    [_scannerView startCamera];
-}
+// MARK: Life cycle Events
+/*!
+ Called when the device is setup, the event contains information about permissions and camera capabilities
+ */
+RCT_EXPORT_VIEW_PROPERTY(onDeviceSetup, RCTBubblingEventBlock)
 
-RCT_EXPORT_METHOD(stop) {
-    [_scannerView stopCamera];
-}
+/*!
+ Called when the frame is captured.  This is before any processing and is only available in memory.
+ */
+RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTBubblingEventBlock)
 
-RCT_EXPORT_METHOD(cleanup) {
-    [_scannerView cleanup];
-}
+/*!
+ Called when the captured frame is processed and saved to the temp file directory.
+ */
+RCT_EXPORT_VIEW_PROPERTY(onPictureProcessed, RCTBubblingEventBlock)
 
+/*!
+ Called when a rectangle is detected
+ */
+RCT_EXPORT_VIEW_PROPERTY(onRectangleDetected, RCTBubblingEventBlock)
 
+/*!
+ Called when the flash is turned off or on
+ */
+RCT_EXPORT_VIEW_PROPERTY(onTorchChanged, RCTBubblingEventBlock)
 
 - (UIView*) view {
-    _scannerView = [[RCDocumentScannerView alloc] init];
-    return _scannerView;
+  _scannerView = [[RCDocumentScannerView alloc] init];
+  return _scannerView;
 }
 
 @end

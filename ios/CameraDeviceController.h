@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <React/RCTViewManager.h>
 
 typedef NS_ENUM(NSInteger, CameraFilterTypes)
 {
@@ -22,22 +23,24 @@ typedef NS_ENUM(NSInteger, CameraFilterTypes)
 - (void)stop;
 
 @property (nonatomic,assign,getter=isTorchEnabled) BOOL enableTorch;
-@property (nonatomic,assign,getter=isFrontCam) BOOL useFrontCam;
 
 - (void)focusAtPoint:(CGPoint)point completionHandler:(void(^)(void))completionHandler;
 
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler;
+- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage, int orientation))completionHandler;
 - (CIImage *)processOutput:(CIImage *)image;
 - (UIView *)getPreviewLayerView;
-- (void)deviceDidSetup:(NSDictionary*) config;
 - (CGRect)getBounds;
 - (CIImage *)detectionFilter:(CIImage *)image;
+
+- (void)deviceWasSetup:(NSDictionary *)config;
+- (void)torchWasChanged:(BOOL)enableTorch;
 
 @property (nonatomic, assign) BOOL hasTakenPhoto;
 @property (nonatomic, assign) BOOL forceStop;
 @property (nonatomic, assign) BOOL _isStopped;
+@property (nonatomic, assign) BOOL _cameraIsSetup;
 @property (nonatomic, assign) BOOL _isCapturing;
-@property (nonatomic, assign) int filter;
+@property (nonatomic, assign) int filterId;
 @property (nonatomic,strong) EAGLContext *context;
 @property (nonatomic, strong) CIContext *_coreImageContext;
 
