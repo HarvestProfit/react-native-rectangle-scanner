@@ -59,7 +59,7 @@
  */
 - (void)torchWasChanged:(BOOL)enableTorch {
   if (self.onTorchChanged) {
-    self.onTorchChanged(@{@"enabled": @(enableTorch)});
+    self.onTorchChanged(@{@"enabled": enableTorch ? @TRUE : @FALSE});
   }
 }
 
