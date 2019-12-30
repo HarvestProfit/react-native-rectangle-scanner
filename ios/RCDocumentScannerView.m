@@ -1,5 +1,4 @@
 #import "RCDocumentScannerView.h"
-#import "ReactCameraViewController.h"
 
 @implementation RCDocumentScannerView
 
@@ -11,7 +10,7 @@
     self._cameraIsSetup = FALSE;
     self.capturedQuality = 0.5;
   }
-  
+
   return self;
 }
 
@@ -54,12 +53,13 @@
   }
 }
 
+
 /*!
  Called after the torch state is changed
  */
-- (void)torchWasChanged:(BOOL)enableTorch {
+- (void)torchWasChanged:(BOOL)torchEnabled {
   if (self.onTorchChanged) {
-    self.onTorchChanged(@{@"enabled": enableTorch ? @TRUE : @FALSE});
+    self.onTorchChanged(@{@"enabled": torchEnabled ? @TRUE : @FALSE});
   }
 }
 
@@ -74,39 +74,42 @@
 }
 
 /*!
- Captures the current frame and sends the processed image(s) to the on picture taken callback.
- */
-- (void) capture {
-  [self captureImageWithCompletionHander:^(UIImage *croppedImage, UIImage *initialImage, CIRectangleFeature *rectangleFeature) {
-      
-    
-    NSString *dir = NSTemporaryDirectory();
-        
-    NSString *croppedFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"cropped_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
-    NSString *initialFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"initial_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
-    
-    if (self.onPictureTaken) {
-      self.onPictureTaken(@{
+After capture, the image is stored and sent to the event handler
+*/
+-(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature {
+  NSString *dir = NSTemporaryDirectory();
+
+  NSString *croppedFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"cropped_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
+  NSString *initialFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"initial_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
+
+  if (self.onPictureTaken) {
+    self.onPictureTaken(@{
+      @"croppedImage": croppedFilePath,
+      @"initialImage": initialFilePath
+    });
+  }
+
+  float quality = self.capturedQuality || 0.5;
+  @autoreleasepool {
+    NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, quality);
+    NSData *initialImageData = UIImageJPEGRepresentation(initialImage, quality);
+    [croppedImageData writeToFile:croppedFilePath atomically:YES];
+    [initialImageData writeToFile:initialFilePath atomically:YES];
+
+    if (self.onPictureProcessed) {
+      self.onPictureProcessed(@{
         @"croppedImage": croppedFilePath,
         @"initialImage": initialFilePath
       });
     }
-    
-    float quality = self.capturedQuality || 0.5;
-    @autoreleasepool {
-      NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, quality);
-      NSData *initialImageData = UIImageJPEGRepresentation(initialImage, quality);
-      [croppedImageData writeToFile:croppedFilePath atomically:YES];
-      [initialImageData writeToFile:initialFilePath atomically:YES];
-      
-      if (self.onPictureProcessed) {
-        self.onPictureProcessed(@{
-          @"croppedImage": croppedFilePath,
-          @"initialImage": initialFilePath
-        });
-      }
-    }
-  }];
+  }
+}
+
+/*!
+ Captures the current frame and sends the processed image(s) to the on picture taken callback.
+ */
+- (void) capture {
+  [self captureImageLater];
 }
 
 

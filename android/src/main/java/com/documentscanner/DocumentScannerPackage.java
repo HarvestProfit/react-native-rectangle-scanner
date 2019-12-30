@@ -20,7 +20,7 @@ public class DocumentScannerPackage implements ReactPackage {
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         return Arrays.<NativeModule>asList(
-            new DocumentScannerModule(reactContext)
+            new RCPdfScannerModule(reactContext)
         );
     }
 
@@ -32,7 +32,7 @@ public class DocumentScannerPackage implements ReactPackage {
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Arrays.<ViewManager>asList(
-                new DocumentScannerViewManager()
+                new RCPdfScannerManager()
         );
     }
 

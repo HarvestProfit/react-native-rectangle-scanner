@@ -111,25 +111,30 @@
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     
     @autoreleasepool {
-      CIImage * detectionImage = [image imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
-      
-      self->_borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:detectionImage] image:detectionImage];
-      self->_borderDetectLastRectangleBounds = detectionImage.extent;
-      
-      if (self->_borderDetectLastRectangleFeature) {
-        NSDictionary *rectangleCoordinates = [self computeRectangle:self->_borderDetectLastRectangleFeature forImage: detectionImage];
+      @try {
+        CIImage * detectionImage = [image imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
         
-        [self rectangleWasDetected:@{
-          @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
-          @"detectedRectangle": rectangleCoordinates,
-          @"confidence": @(self->_imageDedectionConfidence)
-        }];
-      } else {
-        [self rectangleWasDetected:@{
-          @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
-          @"detectedRectangle": @FALSE,
-          @"confidence": @(self->_imageDedectionConfidence)
-        }];
+        self->_borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:detectionImage] image:detectionImage];
+        self->_borderDetectLastRectangleBounds = detectionImage.extent;
+        
+        if (self->_borderDetectLastRectangleFeature) {
+          NSDictionary *rectangleCoordinates = [self computeRectangle:self->_borderDetectLastRectangleFeature forImage: detectionImage];
+          
+          [self rectangleWasDetected:@{
+            @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
+            @"detectedRectangle": rectangleCoordinates,
+            @"confidence": @(self->_imageDedectionConfidence)
+          }];
+        } else {
+          [self rectangleWasDetected:@{
+            @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
+            @"detectedRectangle": @FALSE,
+            @"confidence": @(self->_imageDedectionConfidence)
+          }];
+        }
+      }
+      @catch (NSException * e) {
+        NSLog(@"Failed to parse image: %@", e);
       }
     }
   });
@@ -139,26 +144,26 @@
 
 // MARK: Capture
 /*!
- Captures the current frame from the camera, if it has detected a border, then it will crop the image and send the cropped image and original image to the
- completion handler.
+ After an image is captured and cropped, this method is called
  */
-- (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler
-{
-  [super captureImageWithCompletionHander:^(CIImage* enhancedImage){
-    if (self.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(self->_imageDedectionConfidence))
-    {
-      if (self->_borderDetectLastRectangleFeature)
-        {
-          CIImage *croppedImage = [self correctPerspectiveForImage:enhancedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
-          UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:UIImageOrientationRight];
-          UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale: 1.0 orientation:UIImageOrientationRight];
-          completionHandler(image, initialImage, self->_borderDetectLastRectangleFeature);
-        }
-    } else {
-        UIImage *initialImage = [UIImage imageWithCIImage:enhancedImage scale: 1.0 orientation:UIImageOrientationRight];
-        completionHandler(initialImage, initialImage, nil);
-    }
-  }];
+-(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature {
+}
+
+/*!
+After an image is captured, this fuction is called and handles cropping the image
+*/
+-(void)handleCapturedImage:(CIImage *)capturedImage {
+  if (self.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(self->_imageDedectionConfidence) &&
+      self->_borderDetectLastRectangleFeature)
+  {
+    CIImage *croppedImage = [self correctPerspectiveForImage:capturedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
+    UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:UIImageOrientationRight];
+    UIImage *initialImage = [UIImage imageWithCIImage:capturedImage scale: 1.0 orientation:UIImageOrientationRight];
+    [self onProcessedCapturedImage:image initialImage: initialImage lastRectangleFeature: self->_borderDetectLastRectangleFeature];
+  } else {
+    UIImage *initialImage = [UIImage imageWithCIImage:capturedImage scale: 1.0 orientation:UIImageOrientationRight];
+    [self onProcessedCapturedImage:initialImage initialImage: initialImage lastRectangleFeature: nil];
+  }
 }
 
 /*!

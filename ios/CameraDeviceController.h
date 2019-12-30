@@ -7,12 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AVFoundation/AVFoundation.h>
 #import <React/RCTViewManager.h>
 
 typedef NS_ENUM(NSInteger, CameraFilterTypes)
 {
-    CameraFilterSepiaType,
-    CameraFilterBlackAndWhiteType
+  CameraFilterSepiaType,
+  CameraFilterBlackAndWhiteType
 };
 
 @interface CameraDeviceController : UIView
@@ -26,7 +27,7 @@ typedef NS_ENUM(NSInteger, CameraFilterTypes)
 
 - (void)focusAtPoint:(CGPoint)point completionHandler:(void(^)(void))completionHandler;
 
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler;
+- (void)captureImageLater;
 - (CIImage *)processOutput:(CIImage *)image;
 - (UIView *)getPreviewLayerView;
 - (CGRect)getBounds;
@@ -34,6 +35,7 @@ typedef NS_ENUM(NSInteger, CameraFilterTypes)
 
 - (void)deviceWasSetup:(NSDictionary *)config;
 - (void)torchWasChanged:(BOOL)enableTorch;
+- (void)handleCapturedImage:(CIImage *)capturedImage;
 
 @property (nonatomic, assign) BOOL hasTakenPhoto;
 @property (nonatomic, assign) BOOL forceStop;

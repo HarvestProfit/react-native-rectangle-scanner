@@ -50,6 +50,14 @@ public class MainView extends FrameLayout {
         view.setEnableTorch(enable);
     }
 
+    public void setCapturedQuality(double quality) {
+        view.setCapturedQuality(quality);
+    }
+
+    public void setFilterId(int filterId) {
+        view.setFilterId(filterId);
+    }
+
     public void setOnScannerListener(OpenNoteCameraView.OnScannerListener listener) {
         view.setOnScannerListener(listener);
     }
@@ -80,5 +88,33 @@ public class MainView extends FrameLayout {
 
     public void capture() {
         view.capture();
+    }
+
+
+    private void deviceWasSetup(WritableMap config) {
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onDeviceSetup", config);
+    }
+
+    private void torchWasChanged(boolean torchEnabled) {
+      WritableMap map = Arguments.createMap();
+      map.putBoolean("enabled", torchEnabled);
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onTorchChanged", map);
+    }
+
+    private void rectangleWasDetected(WritableMap detection) {
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onRectangleDetected", detection);
+    }
+
+    private void pictureWasTaken(WritableMap pictureDetails) {
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onPictureTaken", pictureDetails);
+    }
+
+    private void pictureWasProcessed(WritableMap pictureDetails) {
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onPictureProcessed", pictureDetails);
     }
 }

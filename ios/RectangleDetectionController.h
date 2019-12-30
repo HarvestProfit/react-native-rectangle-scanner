@@ -24,10 +24,10 @@ typedef NS_ENUM(NSInteger, ScannerRectangleType)
 - (void)start;
 - (void)stop;
 - (void)rectangleWasDetected:(NSDictionary *)detection;
+-(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature;
+- (void)handleCapturedImage:(CIImage *)capturedImage;
 
 @property (nonatomic,assign,getter=isBorderDetectionEnabled) BOOL enableBorderDetection;
-
-- (void)captureImageWithCompletionHander:(void(^)(UIImage *data, UIImage *initialData, CIRectangleFeature *rectangleFeature))completionHandler;
 
 - (CIImage *)processOutput:(CIImage *)image;
 @property (nonatomic, assign) NSInteger detectionRefreshRateInMS;

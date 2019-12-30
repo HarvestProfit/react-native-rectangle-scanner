@@ -15,7 +15,7 @@
 #import <ImageIO/ImageIO.h>
 #import <GLKit/GLKit.h>
 
-@interface CameraDeviceController () <AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface CameraDeviceController () <AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate>
 
 /*!
 @property session
@@ -43,7 +43,7 @@ Represents the input from the camera device
  @abstract
  Used for still image capture
  */
-@property (nonatomic, strong) AVCaptureStillImageOutput *stillImageOutput;
+@property (nonatomic, strong) AVCapturePhotoOutput *cameraOutput;
 
 @end
 
@@ -267,7 +267,10 @@ Represents the input from the camera device
  @return A camera hardware object or nil if not found
  */
 - (AVCaptureDevice *)getCameraDevice{
-  NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+  AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
+                                        mediaType:AVMediaTypeVideo
+                                         position:AVCaptureDevicePositionBack];
+  NSArray *devices = [captureDeviceDiscoverySession devices];
   for (AVCaptureDevice *possibleDevice in devices) {
     if ([possibleDevice position] != AVCaptureDevicePositionFront) return possibleDevice;
   }
@@ -337,8 +340,8 @@ Represents the input from the camera device
   [self.captureSession addOutput:dataOutput];
 
   // Output session capture to still image output
-  self.stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-  [self.captureSession addOutput:self.stillImageOutput];
+  self.cameraOutput = [[AVCapturePhotoOutput alloc] init];
+  [self.captureSession addOutput:self.cameraOutput];
 
   // Correct the orientation of the output
   [self setVideoOrientation];
@@ -361,14 +364,6 @@ Represents the input from the camera device
   {
     [self.captureDevice lockForConfiguration:nil];
     [self.captureDevice setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
-    [self.captureDevice unlockForConfiguration];
-  }
-  
-  // Setup camera flash mode
-  if (self.captureDevice.isFlashAvailable)
-  {
-    [self.captureDevice lockForConfiguration:nil];
-    [self.captureDevice setFlashMode:AVCaptureFlashModeOff];
     [self.captureDevice unlockForConfiguration];
   }
   return self.captureDevice;
@@ -512,49 +507,62 @@ Represents the input from the camera device
 
 // MARK: Capture Image
 
-/*!
- Captures the current output from the capture session, applies some filters, and sends the CIImage to a completionHandler
- */
-- (void)captureImageWithCompletionHander:(void(^)(CIImage* enhancedImage))completionHandler
-{
-  if (self._isCapturing) return;
+-(void)handleCapturedImage:(CIImage *)capturedImage {
+}
 
-  AVCaptureConnection *videoConnection = nil;
-  for (AVCaptureConnection *connection in self.stillImageOutput.connections)
-  {
-    for (AVCaptureInputPort *port in [connection inputPorts])
-    {
-      if ([[port mediaType] isEqual:AVMediaTypeVideo] )
-      {
-        videoConnection = connection;
-        break;
-      }
-    }
-    if (videoConnection) break;
+/*!
+ Responds to the capture Output call via delegate. It will apply a few filters and call handleCapturedImage which can be overrided for more processing
+ */
+-(void)captureOutput:(AVCapturePhotoOutput *)photo didFinishProcessingPhotoSampleBuffer:(CMSampleBufferRef)photoSampleBuffer previewPhotoSampleBuffer:(CMSampleBufferRef)previewPhotoSampleBuffer resolvedSettings:(AVCaptureResolvedPhotoSettings *)resolvedSettings bracketSettings:(AVCaptureBracketedStillImageSettings *)bracketSettings error:(NSError *)error
+{
+  if (error) {
+    NSLog(@"error : %@", error.localizedDescription);
   }
-  
-  if (!videoConnection) return;
-  self._isCapturing = YES;
-  [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error)
-  {
-    NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageSampleBuffer];
+
+  if (photoSampleBuffer) {
+    NSData *imageData = [AVCapturePhotoOutput JPEGPhotoDataRepresentationForJPEGSampleBuffer:photoSampleBuffer previewPhotoSampleBuffer:previewPhotoSampleBuffer];
+      
     CIImage *intialImage = [CIImage imageWithData:imageData];
     intialImage = [intialImage imageByApplyingOrientation:[self getCGImageOrientationForCaptureImage]];
-    
+        
     // Crop to fit screen size
     CGSize screenSize = CGSizeMake(self.bounds.size.height, self.bounds.size.width);
     CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(screenSize, intialImage.extent);
 
     intialImage = [intialImage imageByCroppingToRect:cropRect];
     intialImage = [intialImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-intialImage.extent.origin.x, -intialImage.extent.origin.y)];
-    
+        
     [self setEnableTorch: NO];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
       CIImage *enhancedImage = [self applyFilters:intialImage];
       self._isCapturing = NO;
-      completionHandler(enhancedImage);
+      [self handleCapturedImage:enhancedImage];
     });
-  }];
+  }
+}
+
+/*!
+ Triggers a capture from the photo output
+ */
+- (void)captureImageLater
+{
+  if (self._isCapturing) return;
+  self._isCapturing = YES;
+  
+  AVCapturePhotoSettings *settings = [[AVCapturePhotoSettings alloc] init];
+  NSNumber *previewPixelType = settings.availablePreviewPhotoPixelFormatTypes.firstObject;
+
+  NSString *formatTypeKey = (NSString *)kCVPixelBufferPixelFormatTypeKey;
+  NSString *widthKey = (NSString *)kCVPixelBufferWidthKey;
+  NSString *heightKey = (NSString *)kCVPixelBufferHeightKey;
+
+  NSDictionary *previewFormat = @{formatTypeKey:previewPixelType,
+                                  widthKey:@1024,
+                                  heightKey:@768
+                                  };
+
+  settings.previewPhotoFormat = previewFormat;
+  [self.cameraOutput capturePhotoWithSettings:settings delegate:self];
 }
 
 // MARK: Filters
