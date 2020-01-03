@@ -4,15 +4,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 import com.documentscanner.R;
 
-/**
- * Created by andre on 09/01/2018.
- */
-
 public class MainView extends FrameLayout {
-    private OpenNoteCameraView view;
+    private RCDocumentScannerView view;
 
     public static MainView instance = null;
 
@@ -30,7 +30,8 @@ public class MainView extends FrameLayout {
         LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         FrameLayout frameLayout = (FrameLayout) lf.inflate(R.layout.activity_open_note_scanner, null);
 
-        view = new OpenNoteCameraView(context, -1, activity, frameLayout);
+        view = new RCDocumentScannerView(context, -1, activity, frameLayout);
+        view.setParent(this);
         addViewInLayout(view, 0, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         addViewInLayout(frameLayout, 1, view.getLayoutParams());
     }
@@ -40,10 +41,6 @@ public class MainView extends FrameLayout {
         for (int i = 0; i < getChildCount(); i++) {
             getChildAt(i).layout(l, t, r, b);
         }
-    }
-
-    public void setDetectionCountBeforeCapture(int numberOfRectangles) {
-        view.setDetectionCountBeforeCapture(numberOfRectangles);
     }
 
     public void setEnableTorch(boolean enable) {
@@ -58,32 +55,16 @@ public class MainView extends FrameLayout {
         view.setFilterId(filterId);
     }
 
-    public void setOnScannerListener(OpenNoteCameraView.OnScannerListener listener) {
-        view.setOnScannerListener(listener);
+    public void startCamera() {
+        view.startCamera();
     }
 
-    public void setOnProcessingListener(OpenNoteCameraView.OnProcessingListener listener) {
-        view.setOnProcessingListener(listener);
+    public void stopCamera() {
+        view.stopCamera();
     }
 
-    public void setOverlayColor(String rgbaColor) {
-        view.setOverlayColor(rgbaColor);
-    }
-
-    public void setSaveOnDevice(Boolean saveOnDevice) {
-        view.setSaveOnDevice(saveOnDevice);
-    }
-
-    public void setBrightness(double brightness) {
-        view.setBrightness(brightness);
-    }
-
-    public void setContrast(double contrast) {
-        view.setContrast(contrast);
-    }
-
-    public void setManualOnly(boolean manualOnly) {
-        view.setManualOnly(manualOnly);
+    public void cleanupCamera() {
+        view.cleanupCamera();
     }
 
     public void capture() {
@@ -91,29 +72,29 @@ public class MainView extends FrameLayout {
     }
 
 
-    private void deviceWasSetup(WritableMap config) {
+    public void deviceWasSetup(WritableMap config) {
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onDeviceSetup", config);
     }
 
-    private void torchWasChanged(boolean torchEnabled) {
-      WritableMap map = Arguments.createMap();
+    public void torchWasChanged(boolean torchEnabled) {
+      WritableMap map = new WritableNativeMap();
       map.putBoolean("enabled", torchEnabled);
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onTorchChanged", map);
     }
 
-    private void rectangleWasDetected(WritableMap detection) {
+    public void rectangleWasDetected(WritableMap detection) {
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onRectangleDetected", detection);
     }
 
-    private void pictureWasTaken(WritableMap pictureDetails) {
+    public void pictureWasTaken(WritableMap pictureDetails) {
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onPictureTaken", pictureDetails);
     }
 
-    private void pictureWasProcessed(WritableMap pictureDetails) {
+    public void pictureWasProcessed(WritableMap pictureDetails) {
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onPictureProcessed", pictureDetails);
     }

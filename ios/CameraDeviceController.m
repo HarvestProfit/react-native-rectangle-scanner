@@ -106,11 +106,12 @@ Represents the input from the camera device
     }
     [device unlockForConfiguration];
   }
-  
+
   [self torchWasChanged:enableTorch];
 }
 
 - (void)torchWasChanged:(BOOL)enableTorch {}
+
 
 /*!
  Starts the capture session
@@ -170,10 +171,7 @@ Represents the input from the camera device
   [self _setDeviceConfigurationFlashAvailable:NO];
   [self _setDeviceConfigurationPermissionToUseCamera:NO ];
   [self _setDeviceConfigurationHasCamera:NO];
-  
-  [_deviceConfiguration setObject: [NSArray arrayWithObjects:[self getColorFilter], [self getGreyScaleFilter], [self getBlackAndWHiteFilter], [self getPhotoFilter], nil] forKey:@"availableFilters"];
 }
-
 
 /*!
  Called after the camera and session are set up. This lets you check if a camera is found and permission is granted to use it.
@@ -208,34 +206,6 @@ Represents the input from the camera device
 - (UIView *)getPreviewLayerView
 {
   return _glkView;
-}
-
-- (NSDictionary *)getColorFilter{
-  return @{
-    @"name": @"Color",
-    @"id": @1
-  };
-}
-
-- (NSDictionary *)getGreyScaleFilter{
-  return @{
-    @"name": @"Greyscale",
-    @"id": @2
-  };
-}
-
-- (NSDictionary *)getBlackAndWHiteFilter{
-  return @{
-    @"name": @"Black & White",
-    @"id": @3
-  };
-}
-
-- (NSDictionary *)getPhotoFilter{
-  return @{
-    @"name": @"Photo",
-    @"id": @4
-  };
 }
 
 - (CGRect)getBounds{
@@ -325,7 +295,7 @@ Represents the input from the camera device
 - (void)setupCamera {
   if (![self setupCaptureDevice]) return;
   if (![self setupInputCaptureFromDevice]) return;
-  
+
   // Set up the capture session from the input
   self.captureSession = [[AVCaptureSession alloc] init];
   [self.captureSession beginConfiguration];
@@ -345,7 +315,7 @@ Represents the input from the camera device
 
   // Correct the orientation of the output
   [self setVideoOrientation];
-  
+
   [self.captureSession commitConfiguration];
 }
 
@@ -358,7 +328,7 @@ Represents the input from the camera device
   if (!self.captureDevice) return nil;
   [self _setDeviceConfigurationHasCamera:YES];
   [self _setDeviceConfigurationFlashAvailable:([self.captureDevice hasTorch] && [self.captureDevice hasFlash])];
-  
+
   // Setup camera focus mode
   if ([self.captureDevice isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
   {
@@ -404,7 +374,7 @@ Represents the input from the camera device
     default:
       videoOrientation = AVCaptureVideoOrientationPortrait;
   }
-  
+
   [[[self.captureSession.outputs firstObject].connections firstObject] setVideoOrientation:videoOrientation];
 }
 
@@ -484,18 +454,18 @@ Represents the input from the camera device
   if (self.forceStop) return;
   if (self._isStopped || self._isCapturing || !CMSampleBufferIsValid(sampleBuffer)) return;
 
-  
+
   CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
 
   CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
-  
-  
+
+
   // Crop to fit screen
   CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(CGSizeMake(self.bounds.size.width, self.bounds.size.height), image.extent);
   image = [image imageByCroppingToRect:cropRect];
-  
+
   image = [self processOutput:image];
-  
+
   if (self.context && self._coreImageContext)
   {
     [self._coreImageContext drawImage:image inRect:self.bounds fromRect:image.extent];
@@ -521,17 +491,17 @@ Represents the input from the camera device
 
   if (photoSampleBuffer) {
     NSData *imageData = [AVCapturePhotoOutput JPEGPhotoDataRepresentationForJPEGSampleBuffer:photoSampleBuffer previewPhotoSampleBuffer:previewPhotoSampleBuffer];
-      
+
     CIImage *intialImage = [CIImage imageWithData:imageData];
     intialImage = [intialImage imageByApplyingOrientation:[self getCGImageOrientationForCaptureImage]];
-        
+
     // Crop to fit screen size
     CGSize screenSize = CGSizeMake(self.bounds.size.height, self.bounds.size.width);
     CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(screenSize, intialImage.extent);
 
     intialImage = [intialImage imageByCroppingToRect:cropRect];
     intialImage = [intialImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-intialImage.extent.origin.x, -intialImage.extent.origin.y)];
-        
+
     [self setEnableTorch: NO];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
       CIImage *enhancedImage = [self applyFilters:intialImage];
@@ -548,7 +518,7 @@ Represents the input from the camera device
 {
   if (self._isCapturing) return;
   self._isCapturing = YES;
-  
+
   AVCapturePhotoSettings *settings = [[AVCapturePhotoSettings alloc] init];
   NSNumber *previewPixelType = settings.availablePreviewPhotoPixelFormatTypes.firstObject;
 
@@ -571,14 +541,14 @@ Represents the input from the camera device
  Applies filters to the CIImage based on configuration
  */
 - (CIImage *)applyFilters:(CIImage *)image{
-  if (self.filterId == 2) return [self applyGreyScaleFilterToImage:image];
-  if (self.filterId == 3) return [self applyBlackAndWhiteFilterToImage:image];
+  if (self.filterId == 2) return [self applyBlackAndWhiteFilterToImage:image];
+  if (self.filterId == 3) return [self applyGreyScaleFilterToImage:image];
   if (self.filterId == 4) return image;
   return [self applyColorFilterToImage:image];
 }
 
 /*!
- Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ Adds a black and white filter over the image
  */
 - (CIImage *)applyGreyScaleFilterToImage:(CIImage *)image
 {
@@ -586,7 +556,7 @@ Represents the input from the camera device
 }
 
 /*!
- Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ Adds a black and white filter that bumps up the clarity of edges
  */
 - (CIImage *)applyBlackAndWhiteFilterToImage:(CIImage *)image
 {
@@ -594,15 +564,11 @@ Represents the input from the camera device
 }
 
 /*!
- Adds a black and white filter to the image that can be adjusted by setting the intensity property
+ Adds a color filter that bumps up the clarity of edges
  */
 - (CIImage *)applyColorFilterToImage:(CIImage *)image
 {
   return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0.35), kCIInputContrastKey, @(1.9), kCIInputSaturationKey, @(0.75), nil].outputImage;
-}
-
-- (CIImage *)detectionFilter:(CIImage *)image {
-  return [CIFilter filterWithName:@"CIColorControls" keysAndValues:kCIInputImageKey, image, kCIInputBrightnessKey, @(0.6), kCIInputContrastKey, @(2), kCIInputSaturationKey, @(2), nil].outputImage;
 }
 
 @end

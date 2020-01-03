@@ -23,25 +23,26 @@ public class RCPdfScannerModule extends ReactContextBaseJavaModule{
     @ReactMethod
     public void start(){
         MainView view = MainView.getInstance();
-        view.capture();
+        view.startCamera();
     }
 
     @ReactMethod
     public void stop(){
         MainView view = MainView.getInstance();
-        view.capture();
+        view.stopCamera();
     }
 
     @ReactMethod
     public void cleanup(){
         MainView view = MainView.getInstance();
-        view.capture();
+        view.cleanupCamera();
     }
 
     @ReactMethod
     public void refresh(){
         MainView view = MainView.getInstance();
-        view.capture();
+        view.stopCamera();
+        view.startCamera();
     }
 
     @ReactMethod

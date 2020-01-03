@@ -22,23 +22,14 @@
 
 @implementation RectangleDetectionController
 {
-    CGFloat _imageDedectionConfidence;
-    NSTimer *_borderDetectTimeKeeper;
-    BOOL _borderDetectFrame;
-    CIRectangleFeature *_borderDetectLastRectangleFeature;
+  CGFloat _imageDedectionConfidence;
+  NSTimer *_borderDetectTimeKeeper;
+  BOOL _borderDetectFrame;
+  CIRectangleFeature *_borderDetectLastRectangleFeature;
   CGRect _borderDetectLastRectangleBounds;
-    NSInteger _detectionRefreshRateInMS;
 }
 
 // MARK: Setters
-
-/*!
- Determines how often the enableBorderDetectFrame setter is called from the timer
- */
-- (void)setDetectionRefreshRateInMS:(NSInteger)detectionRefreshRateInMS
-{
-    _detectionRefreshRateInMS = detectionRefreshRateInMS;
-}
 
 /*!
  Turns on the image detection.  Once turned on, the next frame displayed on the previewlayer will get scanned for a
@@ -79,7 +70,7 @@
 - (void)stop
 {
   [super stop];
-    
+
   [_borderDetectTimeKeeper invalidate];
 }
 
@@ -95,7 +86,7 @@
     } else {
       _imageDedectionConfidence = 0.0f;
     }
-    
+
     if (_borderDetectFrame) {
       [self detectRectangleFromImageLater:image];
       _borderDetectFrame = NO;
@@ -109,17 +100,17 @@
  */
 - (void)detectRectangleFromImageLater:(CIImage *)image {
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    
+
     @autoreleasepool {
       @try {
         CIImage * detectionImage = [image imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
-        
+
         self->_borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:detectionImage] image:detectionImage];
         self->_borderDetectLastRectangleBounds = detectionImage.extent;
-        
+
         if (self->_borderDetectLastRectangleFeature) {
           NSDictionary *rectangleCoordinates = [self computeRectangle:self->_borderDetectLastRectangleFeature forImage: detectionImage];
-          
+
           [self rectangleWasDetected:@{
             @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
             @"detectedRectangle": rectangleCoordinates,
@@ -171,10 +162,10 @@ After an image is captured, this fuction is called and handles cropping the imag
  */
 - (CIImage *)correctPerspectiveForImage:(CIImage *)image withFeatures:(CIRectangleFeature *)rectangleFeature fromBounds:(CGRect)bounds
 {
-  
+
   float xScale = image.extent.size.width / bounds.size.width;
   float yScale = image.extent.size.height / bounds.size.height;
-  
+
   NSMutableDictionary *rectangleCoordinates = [NSMutableDictionary new];
   CGPoint newLeft = CGPointMake(rectangleFeature.topLeft.x * xScale, rectangleFeature.topLeft.y * yScale);
   CGPoint newRight = CGPointMake(rectangleFeature.topRight.x * xScale, rectangleFeature.topRight.y * yScale);
@@ -186,7 +177,7 @@ After an image is captured, this fuction is called and handles cropping the imag
   rectangleCoordinates[@"inputTopRight"] = [CIVector vectorWithCGPoint:newRight];
   rectangleCoordinates[@"inputBottomLeft"] = [CIVector vectorWithCGPoint:newBottomLeft];
   rectangleCoordinates[@"inputBottomRight"] = [CIVector vectorWithCGPoint:newBottomRight];
-  
+
   return [image imageByApplyingFilter:@"CIPerspectiveCorrection" withInputParameters:rectangleCoordinates];
 }
 
@@ -252,7 +243,7 @@ After an image is captured, this fuction is called and handles cropping the imag
       biggestRectangle = rect;
     }
   }
-  
+
   return biggestRectangle;
 }
 

@@ -12,7 +12,7 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.documentscanner.views.OpenNoteCameraView;
+import com.documentscanner.views.RectangleDetectionController;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.LuminanceSource;
 import com.google.zxing.NotFoundException;
@@ -25,8 +25,8 @@ import com.documentscanner.helpers.OpenNoteMessage;
 import com.documentscanner.helpers.PreviewFrame;
 import com.documentscanner.helpers.Quadrilateral;
 import com.documentscanner.helpers.ScannedDocument;
-import com.documentscanner.helpers.Utils;
-import com.documentscanner.views.HUDCanvasView;
+
+import android.view.Surface;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -38,46 +38,39 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import android.os.Bundle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
+
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableNativeMap;
+import com.facebook.react.bridge.WritableNativeMap;
+import com.facebook.react.bridge.Arguments;
 
 public class ImageProcessor extends Handler {
 
     private static final String TAG = "ImageProcessor";
-    private final OpenNoteCameraView mMainActivity;
+    private final RectangleDetectionController mMainActivity;
     private boolean mBugRotate;
-    private double colorGain = 1; // contrast
-    private double colorBias = 10; // bright
-    private Size mPreviewSize;
-    private Point[] mPreviewPoints;
-    private int numOfSquares = 0;
-    private int numOfRectangles = 10;
+    private Quadrilateral lastDetectedRectangle = null;
 
-    public ImageProcessor(Looper looper, OpenNoteCameraView mainActivity, Context context) {
+    public ImageProcessor(Looper looper, RectangleDetectionController mainActivity, Context context) {
         super(looper);
         this.mMainActivity = mainActivity;
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         mBugRotate = sharedPref.getBoolean("bug_rotate", false);
     }
 
-    public void setNumOfRectangles(int numOfRectangles) {
-        this.numOfRectangles = numOfRectangles;
-    }
-
-    public void setBrightness(double brightness) {
-        this.colorBias = brightness;
-    }
-
-    public void setContrast(double contrast) {
-        this.colorGain = contrast;
-    }
-
+    /**
+    Receives an event message to handle async
+    */
     public void handleMessage(Message msg) {
-
         if (msg.obj.getClass() == OpenNoteMessage.class) {
 
             OpenNoteMessage obj = (OpenNoteMessage) msg.obj;
@@ -85,192 +78,120 @@ public class ImageProcessor extends Handler {
             String command = obj.getCommand();
 
             Log.d(TAG, "Message Received: " + command + " - " + obj.getObj().toString());
-            // TODO: Manage command.equals("colorMode" || "filterMode"), return boolean
-
             if (command.equals("previewFrame")) {
-                processPreviewFrame((PreviewFrame) obj.getObj());
+                processPreviewFrame((Mat) obj.getObj());
             } else if (command.equals("pictureTaken")) {
-                processPicture((Mat) obj.getObj());
+                processCapturedImage((Mat) obj.getObj());
+            } else if (command.equals("enableProcessor")) {
+                mMainActivity.setImageProcessorBusy(false);
             }
         }
     }
 
-    private void processPreviewFrame(PreviewFrame previewFrame) {
-
-        Mat frame = previewFrame.getFrame();
-
-        Result[] results = zxing(frame);
-
-        for (Result result : results) {
-            String qrText = result.getText();
-            if (Utils.isMatch(qrText, "^P.. V.. S[0-9]+") && checkQR(qrText)) {
-                Log.d(TAG, "QR Code valid: " + result.getText());
-                ResultPoint[] qrResultPoints = result.getResultPoints();
-                break;
-            } else {
-                Log.d(TAG, "QR Code ignored: " + result.getText());
-            }
-        }
-
-        boolean focused = mMainActivity.isFocused();
-
-        if (detectPreviewDocument(frame) && focused) {
-            numOfSquares++;
-            if (numOfSquares == numOfRectangles) {
-                mMainActivity.requestPicture();
-                mMainActivity.waitSpinnerVisible();
-                numOfSquares = 0;
-            }
-        } else {
-            numOfSquares = 0;
-        }
-
-        frame.release();
-        mMainActivity.setImageProcessorBusy(false);
-
+    /**
+    Detect a rectangle in the current frame from the camera video
+    */
+    private void processPreviewFrame(Mat frame) {
+      rotateImageForScreen(frame);
+      detectDocumentInFrame(frame);
+      frame.release();
+      mMainActivity.setImageProcessorBusy(false);
     }
 
-    private void processPicture(Mat picture) {
+    /**
+    Process a single frame from the camera video
+    */
+    private void processCapturedImage(Mat picture) {
 
         Mat img = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
         picture.release();
 
-        Log.d(TAG, "processPicture - imported image " + img.size().width + "x" + img.size().height);
+        Log.d(TAG, "processCapturedImage - imported image " + img.size().width + "x" + img.size().height);
 
-        if (mBugRotate) {
-            Core.flip(img, img, 1);
-            Core.flip(img, img, 0);
-        }
+        rotateImageForScreen(img);
 
-        ScannedDocument doc = detectDocument(img);
+        ScannedDocument doc = getDocumentFromImage(img);
 
-        mMainActivity.getHUD().clear();
-        mMainActivity.invalidateHUD();
-        mMainActivity.saveDocument(doc);
+        mMainActivity.onProcessedCapturedImage(doc);
         doc.release();
         picture.release();
 
         mMainActivity.setImageProcessorBusy(false);
-        mMainActivity.waitSpinnerInvisible();
-
     }
 
-    private ScannedDocument detectDocument(Mat inputRgba) {
+    /**
+    Detects a document from the image and sets the last detected rectangle
+    */
+    private void detectDocumentInFrame(Mat inputRgba) {
+        ArrayList<MatOfPoint> contours = findContours(inputRgba);
+        Size srcSize = inputRgba.size();
+        double ratio = srcSize.height / 500;
+        this.lastDetectedRectangle = getQuadrilateral(contours, srcSize);
+        Bundle data = new Bundle();
+        boolean focused = mMainActivity.isFocused();
+        if (focused && this.lastDetectedRectangle != null) {
+          Bundle quadMap = new Bundle();
+
+          Bundle bottomLeft = new Bundle();
+          bottomLeft.putDouble("x", this.lastDetectedRectangle.points[2].x);
+          bottomLeft.putDouble("y", this.lastDetectedRectangle.points[2].y);
+          quadMap.putBundle("bottomLeft", bottomLeft);
+
+          Bundle bottomRight = new Bundle();
+          bottomRight.putDouble("x", this.lastDetectedRectangle.points[1].x);
+          bottomRight.putDouble("y", this.lastDetectedRectangle.points[1].y);
+          quadMap.putBundle("bottomRight", bottomRight);
+
+          Bundle topLeft = new Bundle();
+          topLeft.putDouble("x", this.lastDetectedRectangle.points[3].x);
+          topLeft.putDouble("y", this.lastDetectedRectangle.points[3].y);
+          quadMap.putBundle("topLeft", topLeft);
+
+          Bundle topRight = new Bundle();
+          topRight.putDouble("x", this.lastDetectedRectangle.points[0].x);
+          topRight.putDouble("y", this.lastDetectedRectangle.points[0].y);
+          quadMap.putBundle("topRight", topRight);
+
+          Bundle dimensions = new Bundle();
+          dimensions.putDouble("height", srcSize.height / ratio);
+          dimensions.putDouble("width", srcSize.width / ratio);
+          quadMap.putBundle("dimensions", dimensions);
+
+          Log.d(TAG, "Detect Size" + srcSize.width + "x" + srcSize.height);
+          Log.d(TAG, "Detect Top Left" + this.lastDetectedRectangle.points[3].x + "," + this.lastDetectedRectangle.points[3].y);
+
+          data.putBundle("detectedRectangle", quadMap);
+        } else {
+          data.putBoolean("detectedRectangle", false);
+        }
+
+        mMainActivity.rectangleWasDetected(Arguments.fromBundle(data));
+    }
+
+    /**
+    Detects a document from the captured image
+    */
+    private ScannedDocument getDocumentFromImage(Mat inputRgba) {
         ArrayList<MatOfPoint> contours = findContours(inputRgba);
 
         ScannedDocument sd = new ScannedDocument(inputRgba);
 
         sd.originalSize = inputRgba.size();
-        Quadrilateral quad = getQuadrilateral(contours, sd.originalSize);
-
         double ratio = sd.originalSize.height / 500;
         sd.heightWithRatio = Double.valueOf(sd.originalSize.width / ratio).intValue();
         sd.widthWithRatio = Double.valueOf(sd.originalSize.height / ratio).intValue();
 
         Mat doc;
-        if (quad != null) {
-
-            sd.originalPoints = new Point[4];
-
-            sd.originalPoints[0] = new Point(sd.widthWithRatio - quad.points[3].y, quad.points[3].x); // TopLeft
-            sd.originalPoints[1] = new Point(sd.widthWithRatio - quad.points[0].y, quad.points[0].x); // TopRight
-            sd.originalPoints[2] = new Point(sd.widthWithRatio - quad.points[1].y, quad.points[1].x); // BottomRight
-            sd.originalPoints[3] = new Point(sd.widthWithRatio - quad.points[2].y, quad.points[2].x); // BottomLeft
-
-            sd.quadrilateral = quad;
-            sd.previewPoints = mPreviewPoints;
-            sd.previewSize = mPreviewSize;
-
-            doc = fourPointTransform(inputRgba, quad.points);
+        if (this.lastDetectedRectangle != null) {
+            doc = fourPointTransform(inputRgba, this.lastDetectedRectangle.points);
+            Core.flip(doc.t(), doc, 0);
         } else {
             doc = new Mat(inputRgba.size(), CvType.CV_8UC4);
             inputRgba.copyTo(doc);
+            Core.flip(doc.t(), doc, 0);
         }
-        enhanceDocument(doc);
+        applyFilters(doc);
         return sd.setProcessed(doc);
-    }
-
-    private final HashMap<String, Long> pageHistory = new HashMap<>();
-
-    private boolean checkQR(String qrCode) {
-
-        return !(pageHistory.containsKey(qrCode) && pageHistory.get(qrCode) > new Date().getTime() / 1000 - 15);
-
-    }
-
-    private boolean detectPreviewDocument(Mat inputRgba) {
-
-        ArrayList<MatOfPoint> contours = findContours(inputRgba);
-
-        Quadrilateral quad = getQuadrilateral(contours, inputRgba.size());
-
-        Log.i("DESENHAR", "Quad----->" + quad);
-
-        mPreviewPoints = null;
-        mPreviewSize = inputRgba.size();
-
-        if (quad != null) {
-
-            Point[] rescaledPoints = new Point[4];
-
-            double ratio = inputRgba.size().height / 500;
-
-            for (int i = 0; i < 4; i++) {
-                int x = Double.valueOf(quad.points[i].x * ratio).intValue();
-                int y = Double.valueOf(quad.points[i].y * ratio).intValue();
-                if (mBugRotate) {
-                    rescaledPoints[(i + 2) % 4] = new Point(Math.abs(x - mPreviewSize.width),
-                            Math.abs(y - mPreviewSize.height));
-                } else {
-                    rescaledPoints[i] = new Point(x, y);
-                }
-            }
-
-            mPreviewPoints = rescaledPoints;
-
-            drawDocumentBox(mPreviewPoints, mPreviewSize);
-
-            return true;
-
-        }
-
-        mMainActivity.getHUD().clear();
-        mMainActivity.invalidateHUD();
-
-        return false;
-
-    }
-
-    private void drawDocumentBox(Point[] points, Size stdSize) {
-
-        Path path = new Path();
-
-        HUDCanvasView hud = mMainActivity.getHUD();
-
-        // ATTENTION: axis are swapped
-
-        float previewWidth = (float) stdSize.height;
-        float previewHeight = (float) stdSize.width;
-
-        path.moveTo(previewWidth - (float) points[0].y, (float) points[0].x);
-        path.lineTo(previewWidth - (float) points[1].y, (float) points[1].x);
-        path.lineTo(previewWidth - (float) points[2].y, (float) points[2].x);
-        path.lineTo(previewWidth - (float) points[3].y, (float) points[3].x);
-        path.close();
-
-        PathShape newBox = new PathShape(path, previewWidth, previewHeight);
-
-        Paint paint = new Paint();
-        paint.setColor(mMainActivity.parsedOverlayColor());
-
-        Paint border = new Paint();
-        border.setColor(mMainActivity.parsedOverlayColor());
-        border.setStrokeWidth(5);
-
-        hud.clear();
-        hud.addShape(newBox, paint, border);
-        mMainActivity.invalidateHUD();
-
     }
 
     private Quadrilateral getQuadrilateral(ArrayList<MatOfPoint> contours, Size srcSize) {
@@ -363,11 +284,6 @@ public class ImageProcessor extends Handler {
         return isANormalShape && isAnActualRectangle && isBigEnough;
     }
 
-    private void enhanceDocument(Mat src) {
-        Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2GRAY);
-        src.convertTo(src, CvType.CV_8UC1, colorGain, colorBias);
-    }
-
     private Mat fourPointTransform(Mat src, Point[] pts) {
 
         double ratio = src.size().height / 500;
@@ -447,44 +363,62 @@ public class ImageProcessor extends Handler {
         return contours;
     }
 
-    private final QRCodeMultiReader qrCodeMultiReader = new QRCodeMultiReader();
-
-    private Result[] zxing(Mat inputImage) {
-
-        int w = inputImage.width();
-        int h = inputImage.height();
-
-        Mat southEast;
-
-        if (mBugRotate) {
-            southEast = inputImage.submat(h - h / 4, h, 0, w / 2 - h / 4);
-        } else {
-            southEast = inputImage.submat(0, h / 4, w / 2 + h / 4, w);
-        }
-
-        Bitmap bMap = Bitmap.createBitmap(southEast.width(), southEast.height(), Bitmap.Config.ARGB_8888);
-        org.opencv.android.Utils.matToBitmap(southEast, bMap);
-        southEast.release();
-        int[] intArray = new int[bMap.getWidth() * bMap.getHeight()];
-        // copy pixel data from the Bitmap into the 'intArray' array
-        bMap.getPixels(intArray, 0, bMap.getWidth(), 0, 0, bMap.getWidth(), bMap.getHeight());
-
-        LuminanceSource source = new RGBLuminanceSource(bMap.getWidth(), bMap.getHeight(), intArray);
-
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-        Result[] results = {};
-        try {
-            results = qrCodeMultiReader.decodeMultiple(bitmap);
-        } catch (NotFoundException ignored) {
-        }
-
-        return results;
-
-    }
-
     public void setBugRotate(boolean bugRotate) {
         mBugRotate = bugRotate;
     }
 
+    /*!
+     Applies filters to the image based on the set filter
+     */
+    public void applyFilters(Mat image) {
+      int filterId = this.mMainActivity.getFilterId();
+      if (filterId == 2) {
+        applyBlackAndWhiteFilterToImage(image);
+      } else {
+        applyColorFilterToImage(image);
+      }
+    }
+
+    /*!
+     Slightly enhances the black and white image
+     */
+    public Mat applyBlackAndWhiteFilterToImage(Mat image)
+    {
+      Imgproc.cvtColor(image, image, Imgproc.COLOR_RGBA2GRAY);
+      image.convertTo(image, -1, 1, 10);
+      return image;
+    }
+
+    /*!
+     Slightly enhances the color on the image
+     */
+    public Mat applyColorFilterToImage(Mat image)
+    {
+      image.convertTo(image, -1, 1.2, 0);
+      return image;
+    }
+
+
+    public void rotateImageForScreen(Mat image) {
+      switch (this.mMainActivity.lastDetectedRotation) {
+        case Surface.ROTATION_90: {
+          // Do nothing
+          break;
+        }
+        case Surface.ROTATION_180: {
+          Core.flip(image, image, -1);
+          break;
+        }
+        case Surface.ROTATION_270: {
+          Core.flip(image, image, 0);
+          Core.flip(image, image, 1);
+          break;
+        }
+        case Surface.ROTATION_0:
+        default: {
+          Core.flip(image.t(), image, 1);
+          break;
+        }
+      }
+    }
 }
