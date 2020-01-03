@@ -1,34 +1,33 @@
-![Demo gif](https://raw.githubusercontent.com/Michaelvilleneuve/react-native-document-scanner/master/images/demo.gif)
+![Demo gif](images/demo.gif)
+# `react-native-rectangle-scanner`
 
-# `@woonivers/react-native-document-scanner`
+![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
 
-[![CircleCI Status](https://img.shields.io/circleci/project/github/Woonivers/react-native-document-scanner/master.svg)](https://circleci.com/gh/Woonivers/workflows/react-native-document-scanner/tree/master) ![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
-
-Live document detection library. Returns either a URI of the captured image, allowing you to easily store it or use it as you wish!
+Live photo rectangle detection library useful for scanning documents. On capture, it returns the URIs for the original and a cropped version of the image allowing you to use the images as you want. You can additionally apply filters to adjust the visibility of text on the image (similar to the iOS document scanner filters).
 
 - Live detection
 - Perspective correction and crop of the image
+- Filters
 - Flash
+- Orientation Changes
+- Camera permission and capabilities detection
+- Fully customizable UI
 
 ## Getting started
-
-Version `>=2.0.0` is thinking to work with React Native >= 0.60
-
-> Use [version `1.6.2`](https://github.com/Woonivers/react-native-document-scanner/tree/v1.6.2) if you are using React Native 0.59
 
 Install the library using either yarn:
 
 ```sh
-yarn add @woonivers/react-native-document-scanner`
+yarn add react-native-rectangle-scanner`
 ```
 
 or npm:
 
 ```sh
-npm install @woonivers/react-native-document-scanner --save
+npm install react-native-rectangle-scanner --save
 ```
 
-Remember, this library uses your device's camera, **it cannot run on a simulator** and you must request **camera permission** by your own.
+This package can be ran on a simulator, android simulators work a bit better, iOS simulators will simply return `false` for `hasCamera` on device setup.
 
 ### iOS Only
 
@@ -44,22 +43,10 @@ If you do not have it already in your project, you must link openCV in your `set
 
 ```java
 include ':openCVLibrary310'
-project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules/@woonivers/react-native-document-scanner/android/openCVLibrary310')
+project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules//react-native-rectangle-scanner/android/openCVLibrary310')
 ```
 
 #### In android/app/src/main/AndroidManifest.xml
-
-Change manifest header to avoid "Manifest merger error". After you add `xmlns:tools="http://schemas.android.com/tools"` should look like this:
-
-```
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.<yourAppName>" xmlns:tools="http://schemas.android.com/tools">
-```
-
-Add `tools:replace="android:allowBackup"` in <application tag. It should look like this:
-
-```
-<application tools:replace="android:allowBackup" android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="false" android:theme="@style/AppTheme">
-```
 
 Add Camera permissions request:
 
@@ -69,26 +56,35 @@ Add Camera permissions request:
 
 ## Usage
 
+This is the most barebones usage of this. It will show a fullscreen camera preview with no controls on it. Calling `this.camera.current.capture()` will trigger a capture and after the image has been captured and processed (cropped, filtered, stored/cached), it will trigger the `onPictureProcessed` callback.
+
+
 ```javascript
 import React, { Component, useRef } from "react"
 import { View, Image } from "react-native"
 
-import DocumentScanner from "@woonivers/react-native-document-scanner"
+import Scanner from "react-native-rectangle-scanner"
 
-function YourComponent(props) {
-  return (
-    <View>
-      <DocumentScanner
-        style={styles.scanner}
-        onPictureTaken={handleOnPictureTaken}
-        overlayColor="rgba(255,130,0, 0.7)"
-        enableTorch={false}
-        quality={0.5}
-        detectionCountBeforeCapture={5}
-        detectionRefreshRateInMS={50}
+class DocumentScanner extends Component {
+
+  handleOnPictureProcessed = ({croppedImage, initialImage}) => {
+    this.props.doSomethingWithCroppedImagePath(croppedImage);
+    this.props.doSomethingWithOriginalImagePath(initialImage);
+  }
+
+  onCapture = () => {
+    this.camera.current.capture();
+  }
+
+  render() {
+    return (
+      <Scanner
+        onPictureProcessed={this.handleOnPictureProcessed}
+        ref={this.camera}
+        style={{flex: 1}}
       />
-    </View>
-  )
+    );
+  }
 }
 ```
 
