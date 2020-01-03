@@ -1,52 +1,15 @@
 {
-  "parser": "@typescript-eslint/parser",
-  "extends": [
-    "prettier",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:react-native/all",
-    "standard"
-  ],
-  "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "project": "./tsconfig.json"
+  "env": {
+      "jest": true
   },
-  "plugins": ["simple-import-sort", "@typescript-eslint", "react", "react-native", "react-hooks"],
-  "settings": {
-    "react": {
-      "pragma": "React",
-      "version": "detect"
-    }
-  },
-  "globals": {
-    "__DEV__": false,
-    "jasmine": false,
-    "beforeAll": false,
-    "afterAll": false,
-    "beforeEach": false,
-    "afterEach": false,
-    "test": false,
-    "expect": false,
-    "describe": false,
-    "jest": false,
-    "it": false
-  },
+  "extends": "airbnb",
+  "parser": "babel-eslint",
   "rules": {
-    "no-unused-vars": 0,
-    "no-undef": 0,
     "react/no-unescaped-entities": 0,
-    "react-native/no-raw-text": 0,
-    "@typescript-eslint/indent": 0,
-    "@typescript-eslint/explicit-member-accessibility": 0,
-    "@typescript-eslint/explicit-function-return-type": 0,
-    "@typescript-eslint/no-explicit-any": 0,
-    "@typescript-eslint/no-object-literal-type-assertion": 0,
-    "@typescript-eslint/no-empty-interface": 0,
-    "@typescript-eslint/no-var-requires": 0,
-    "simple-import-sort/sort": "error",
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn"
+    "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
+    "function-paren-newline": ["error", "consistent"],
+    "object-curly-newline": ["error", { "consistent": true }],
+    "react/destructuring-assignment": 0,
+    "jsx-a11y/accessible-emoji": 0
   }
 }

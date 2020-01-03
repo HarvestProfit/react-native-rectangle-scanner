@@ -1,7 +1,6 @@
 package com.documentscanner;
 
 import android.app.Activity;
-
 import com.documentscanner.views.MainView;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;

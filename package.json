@@ -1,9 +1,8 @@
 {
-  "name": "react-native-document-scanner",
+  "name": "react-native-rectangle-scanner",
   "version": "1.0.0",
-  "description": "Scan documents, automatic border detection, automatic crop",
+  "description": "Scan documents, automatic border detection, automatic crop, image filters",
   "main": "lib/module/index.js",
-  "types": "lib/typescript/index.d.ts",
   "files": [
     "/android",
     "!/android/build",
@@ -38,78 +37,43 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Woonivers/react-native-document-scanner"
+    "url": "https://github.com/HarvestProfit/react-native-rectangle-scanner"
   },
-  "author": "Woonivers (https://woonivers.com)",
+  "author": "Jake Humphrey (https://github.com/humphreyja)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Woonivers/react-native-document-scanner/issues"
+    "url": "https://github.com/HarvestProfit/react-native-rectangle-scanner/issues"
   },
-  "homepage": "https://github.com/Woonivers/react-native-document-scanner#readme",
+  "homepage": "https://github.com/HarvestProfit/react-native-rectangle-scanner#readme",
   "devDependencies": {
-    "@babel/runtime": "^7.5.5",
-    "@commitlint/config-conventional": "^8.0.0",
-    "@react-native-community/bob": "^0.4.1",
-    "@release-it/conventional-changelog": "^1.1.0",
-    "@types/react": "^16.8.20",
-    "@types/react-native": "^0.57.63",
-    "@typescript-eslint/eslint-plugin": "^1.1.0",
-    "@typescript-eslint/parser": "^1.10.2",
-    "babel-jest": "^24.8.0",
-    "babel-preset-react-native": "^4.0.0",
-    "commitlint": "^8.0.0",
+    "@babel/core": "^7.4.3",
+    "@babel/plugin-proposal-class-properties": "^7.4.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.4.0",
+    "@babel/plugin-transform-runtime": "^7.4.3",
+    "babel-eslint": "^10.0.1",
+    "babel-jest": "24.9.0",
+    "babel-plugin-inline-import": "^3.0.0",
     "eslint": "^5.16.0",
-    "eslint-config-prettier": "^3.6.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.15.0",
-    "eslint-plugin-node": "^8.0.1",
-    "eslint-plugin-promise": "^4.0.1",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
-    "eslint-plugin-react-hooks": "^1.6.1",
-    "eslint-plugin-react-native": "^3.6.0",
-    "eslint-plugin-simple-import-sort": "^4.0.0",
-    "eslint-plugin-standard": "^4.0.0",
-    "husky": "^2.4.1",
-    "jest": "^24.8.0",
-    "lint-staged": "^9.2.1",
-    "prettier": "^1.18.2",
+    "jest": "24.9.0",
+    "jest-enzyme": "^7.0.2",
+    "jest-junit": "^6.4.0",
     "react": "16.8.3",
     "react-dom": "16.8.3",
-    "react-native": "~0.59.8",
-    "release-it": "^12.3.0",
-    "typescript": "^3.5.2",
-    "semantic-release": "^15.13.24"
+    "react-native": "~0.59.8"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
-  },
-  "lint-staged": {
-    "*.{js,ts,tsx}": [
-      "yarn eslint --fix",
-      "git add"
-    ],
-    "*.java": [
-      "cd android && ./graldew spotlessApply",
-      "git add"
-    ]
   },
   "jest": {
     "preset": "react-native",
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
-    ]
-  },
-  "@react-native-community/bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      "module",
-      "typescript"
-    ],
-    "files": [
-      "src/"
     ]
   }
 }
