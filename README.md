@@ -95,7 +95,7 @@ Full example in [example folder](https://github.com/Woonivers/react-native-docum
 
 | Prop                        | Platform | Default |   Type    | Description                                                |
 | :-------------------------- | :------: | :-----: | :-------: | :--------------------------------------------------------- |
-| filterId                    |   Both   | `none`  | `integer` | The id of the filter to use. [See More](https://github.com/HarvestProfit/react-native-rectangle-scanner/edit/fixing-rotation/README.md)                  |
+| filterId                    |   Both   | `none`  | `integer` | The id of the filter to use. [See More](#filters)                  |
 | enableTorch                 |   Both   | `false` |  `bool`   | If the flashlight should be turned on                      |
 | capturedQuality             |   iOS    |  `0.5`  |  `float`  | The jpeg quality of the output images                      |
 | onTorchChanged              |   Both   | `null`  |  `func`   | Called when the system changes the flash state |
