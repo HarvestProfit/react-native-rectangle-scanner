@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		23036F1023AABB5400C4A663 /* CameraDeviceController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0923AABB5400C4A663 /* CameraDeviceController.m */; };
-		23036F1123AABB5400C4A663 /* RCPdfScannerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0A23AABB5400C4A663 /* RCPdfScannerManager.m */; };
-		23036F1223AABB5400C4A663 /* RCDocumentScannerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0C23AABB5400C4A663 /* RCDocumentScannerView.m */; };
+		23036F1123AABB5400C4A663 /* RNRectangleScannerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0A23AABB5400C4A663 /* RNRectangleScannerManager.m */; };
+		23036F1223AABB5400C4A663 /* RNRectangleScannerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0C23AABB5400C4A663 /* RNRectangleScannerView.m */; };
 		23036F1323AABB5400C4A663 /* RectangleDetectionController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23036F0D23AABB5400C4A663 /* RectangleDetectionController.m */; };
 		23036F4923AABDBE00C4A663 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 23036F2A23AABDB000C4A663 /* libReact.a */; };
 /* End PBXBuildFile section */
@@ -142,15 +142,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		134814201AA4EA6300B7C361 /* libRNPdfScanner.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNPdfScanner.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		134814201AA4EA6300B7C361 /* libRNRectangleScanner.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNRectangleScanner.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		23036F0823AABB5400C4A663 /* RectangleDetectionController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RectangleDetectionController.h; sourceTree = "<group>"; };
 		23036F0923AABB5400C4A663 /* CameraDeviceController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CameraDeviceController.m; sourceTree = "<group>"; wrapsLines = 1; };
-		23036F0A23AABB5400C4A663 /* RCPdfScannerManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCPdfScannerManager.m; sourceTree = "<group>"; };
+		23036F0A23AABB5400C4A663 /* RNRectangleScannerManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNRectangleScannerManager.m; sourceTree = "<group>"; };
 		23036F0B23AABB5400C4A663 /* CameraDeviceController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CameraDeviceController.h; sourceTree = "<group>"; };
-		23036F0C23AABB5400C4A663 /* RCDocumentScannerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCDocumentScannerView.m; sourceTree = "<group>"; };
+		23036F0C23AABB5400C4A663 /* RNRectangleScannerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNRectangleScannerView.m; sourceTree = "<group>"; };
 		23036F0D23AABB5400C4A663 /* RectangleDetectionController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RectangleDetectionController.m; sourceTree = "<group>"; };
-		23036F0E23AABB5400C4A663 /* RCDocumentScannerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCDocumentScannerView.h; sourceTree = "<group>"; };
-		23036F0F23AABB5400C4A663 /* RCPdfScannerManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCPdfScannerManager.h; sourceTree = "<group>"; };
+		23036F0E23AABB5400C4A663 /* RNRectangleScannerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNRectangleScannerView.h; sourceTree = "<group>"; };
+		23036F0F23AABB5400C4A663 /* RNRectangleScannerManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNRectangleScannerManager.h; sourceTree = "<group>"; };
 		23036F1623AABDAF00C4A663 /* React.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = React.xcodeproj; path = "../node_modules/react-native/React/React.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -169,7 +169,7 @@
 		134814211AA4EA7D00B7C361 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				134814201AA4EA6300B7C361 /* libRNPdfScanner.a */,
+				134814201AA4EA6300B7C361 /* libRNRectangleScanner.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -210,10 +210,10 @@
 			children = (
 				23036F0B23AABB5400C4A663 /* CameraDeviceController.h */,
 				23036F0923AABB5400C4A663 /* CameraDeviceController.m */,
-				23036F0E23AABB5400C4A663 /* RCDocumentScannerView.h */,
-				23036F0C23AABB5400C4A663 /* RCDocumentScannerView.m */,
-				23036F0F23AABB5400C4A663 /* RCPdfScannerManager.h */,
-				23036F0A23AABB5400C4A663 /* RCPdfScannerManager.m */,
+				23036F0E23AABB5400C4A663 /* RNRectangleScannerView.h */,
+				23036F0C23AABB5400C4A663 /* RNRectangleScannerView.m */,
+				23036F0F23AABB5400C4A663 /* RNRectangleScannerManager.h */,
+				23036F0A23AABB5400C4A663 /* RNRectangleScannerManager.m */,
 				23036F0823AABB5400C4A663 /* RectangleDetectionController.h */,
 				23036F0D23AABB5400C4A663 /* RectangleDetectionController.m */,
 				134814211AA4EA7D00B7C361 /* Products */,
@@ -226,9 +226,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		58B511DA1A9E6C8500147676 /* RNPdfScanner */ = {
+		58B511DA1A9E6C8500147676 /* RNRectangleScanner */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 58B511EF1A9E6C8500147676 /* Build configuration list for PBXNativeTarget "RNPdfScanner" */;
+			buildConfigurationList = 58B511EF1A9E6C8500147676 /* Build configuration list for PBXNativeTarget "RNRectangleScanner" */;
 			buildPhases = (
 				58B511D71A9E6C8500147676 /* Sources */,
 				58B511D81A9E6C8500147676 /* Frameworks */,
@@ -238,9 +238,9 @@
 			);
 			dependencies = (
 			);
-			name = RNPdfScanner;
+			name = RNRectangleScanner;
 			productName = RCTDataManager;
-			productReference = 134814201AA4EA6300B7C361 /* libRNPdfScanner.a */;
+			productReference = 134814201AA4EA6300B7C361 /* libRNRectangleScanner.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -257,7 +257,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 58B511D61A9E6C8500147676 /* Build configuration list for PBXProject "RNDocumentScanner" */;
+			buildConfigurationList = 58B511D61A9E6C8500147676 /* Build configuration list for PBXProject "RNRectangleScanner" */;
 			compatibilityVersion = "Xcode 10.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -276,7 +276,7 @@
 			);
 			projectRoot = "";
 			targets = (
-				58B511DA1A9E6C8500147676 /* RNPdfScanner */,
+				58B511DA1A9E6C8500147676 /* RNRectangleScanner */,
 			);
 		};
 /* End PBXProject section */
@@ -401,9 +401,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23036F1123AABB5400C4A663 /* RCPdfScannerManager.m in Sources */,
+				23036F1123AABB5400C4A663 /* RNRectangleScannerManager.m in Sources */,
 				23036F1323AABB5400C4A663 /* RectangleDetectionController.m in Sources */,
-				23036F1223AABB5400C4A663 /* RCDocumentScannerView.m in Sources */,
+				23036F1223AABB5400C4A663 /* RNRectangleScannerView.m in Sources */,
 				23036F1023AABB5400C4A663 /* CameraDeviceController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -521,7 +521,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_NAME = RNPdfScanner;
+				PRODUCT_NAME = RNRectangleScanner;
 				SKIP_INSTALL = YES;
 			};
 			name = Debug;
@@ -537,7 +537,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_NAME = RNPdfScanner;
+				PRODUCT_NAME = RNRectangleScanner;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -545,7 +545,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		58B511D61A9E6C8500147676 /* Build configuration list for PBXProject "RNDocumentScanner" */ = {
+		58B511D61A9E6C8500147676 /* Build configuration list for PBXProject "RNRectangleScanner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				58B511ED1A9E6C8500147676 /* Debug */,
@@ -554,7 +554,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		58B511EF1A9E6C8500147676 /* Build configuration list for PBXNativeTarget "RNPdfScanner" */ = {
+		58B511EF1A9E6C8500147676 /* Build configuration list for PBXNativeTarget "RNRectangleScanner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				58B511F01A9E6C8500147676 /* Debug */,

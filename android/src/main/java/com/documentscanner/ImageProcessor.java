@@ -372,11 +372,35 @@ public class ImageProcessor extends Handler {
      */
     public void applyFilters(Mat image) {
       int filterId = this.mMainActivity.getFilterId();
-      if (filterId == 2) {
-        applyBlackAndWhiteFilterToImage(image);
-      } else {
-        applyColorFilterToImage(image);
+      switch (filterId) {
+        case 1: {
+          // original image
+          break;
+        }
+        case 2: {
+          applyGreyscaleFilterToImage(image);
+          break;
+        }
+        case 3: {
+          applyColorFilterToImage(image);
+          break;
+        }
+        case 4: {
+          applyBlackAndWhiteFilterToImage(image);
+          break;
+        }
+        default:
+          // original image
       }
+    }
+
+    /*!
+     Slightly enhances the black and white image
+     */
+    public Mat applyGreyscaleFilterToImage(Mat image)
+    {
+      Imgproc.cvtColor(image, image, Imgproc.COLOR_RGBA2GRAY);
+      return image;
     }
 
     /*!

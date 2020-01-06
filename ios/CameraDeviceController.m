@@ -1,9 +1,8 @@
 //
-//  IPDFCameraViewController.m
-//  InstaPDF
+//  CameraDeviceController.m
 //
-//  Created by Maximilian Mackh on 06/01/15.
-//  Copyright (c) 2015 mackh ag. All rights reserved.
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
 //
 
 #import "CameraDeviceController.h"
@@ -39,9 +38,9 @@ Represents the input from the camera device
 @property (nonatomic, strong) AVCaptureDeviceInput* deviceInput;
 
 /*!
- @property stillImageOutput
+ @property cameraOutput
  @abstract
- Used for still image capture
+ Used for image capture output
  */
 @property (nonatomic, strong) AVCapturePhotoOutput *cameraOutput;
 
@@ -541,10 +540,13 @@ Represents the input from the camera device
  Applies filters to the CIImage based on configuration
  */
 - (CIImage *)applyFilters:(CIImage *)image{
-  if (self.filterId == 2) return [self applyBlackAndWhiteFilterToImage:image];
-  if (self.filterId == 3) return [self applyGreyScaleFilterToImage:image];
-  if (self.filterId == 4) return image;
-  return [self applyColorFilterToImage:image];
+  switch (self.filterId) {
+    case 1: return image;
+    case 2: return [self applyGreyScaleFilterToImage:image];
+    case 3: return [self applyColorFilterToImage:image];
+    case 4: return [self applyBlackAndWhiteFilterToImage:image];
+    default: return image;
+  }
 }
 
 /*!

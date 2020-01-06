@@ -1,7 +1,15 @@
+//
+//  RNRectangleScannerView.h
+//
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
+//
+
+
 #import "RectangleDetectionController.h"
 #import <React/RCTViewManager.h>
 
-@interface RCDocumentScannerView : RectangleDetectionController
+@interface RNRectangleScannerView : RectangleDetectionController
 
 @property (nonatomic, copy) RCTBubblingEventBlock onDeviceSetup;
 @property (nonatomic, copy) RCTBubblingEventBlock onTorchChanged;

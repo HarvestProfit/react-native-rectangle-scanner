@@ -1,9 +1,8 @@
 //
-//  IPDFCameraViewController.m
-//  InstaPDF
+//  RectangleDetectionController.m
 //
-//  Created by Maximilian Mackh on 06/01/15.
-//  Copyright (c) 2015 mackh ag. All rights reserved.
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
 //
 
 #import "RectangleDetectionController.h"
@@ -20,6 +19,10 @@
 
 @end
 
+/*!
+ Takes the output from the camera device controller and attempts to detect rectangles from the output. On capture,
+ it will also crop the image.
+ */
 @implementation RectangleDetectionController
 {
   CGFloat _imageDedectionConfidence;
@@ -112,15 +115,11 @@
           NSDictionary *rectangleCoordinates = [self computeRectangle:self->_borderDetectLastRectangleFeature forImage: detectionImage];
 
           [self rectangleWasDetected:@{
-            @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
             @"detectedRectangle": rectangleCoordinates,
-            @"confidence": @(self->_imageDedectionConfidence)
           }];
         } else {
           [self rectangleWasDetected:@{
-            @"lastDetectionType": @(RCIPDFRectangeTypeTooFar),
             @"detectedRectangle": @FALSE,
-            @"confidence": @(self->_imageDedectionConfidence)
           }];
         }
       }
@@ -272,25 +271,6 @@ After an image is captured, this fuction is called and handles cropping the imag
     },
     @"dimensions": @{@"height": @(imageBounds.size.width), @"width": @(imageBounds.size.height)}
   };
-}
-
-/*!
- Determines the potential quality of the contents of a rectangle
- */
-- (ScannerRectangleType) typeForRectangle: (CIRectangleFeature*) rectangle {
-  UIView *previewLayerView = [super getPreviewLayerView];
-  if (fabs(rectangle.topRight.y - rectangle.topLeft.y) > 100 ||
-      fabs(rectangle.topRight.x - rectangle.bottomRight.x) > 100 ||
-      fabs(rectangle.topLeft.x - rectangle.bottomLeft.x) > 100 ||
-      fabs(rectangle.bottomLeft.y - rectangle.bottomRight.y) > 100) {
-    return RCIPDFRectangeTypeBadAngle;
-  } else if ((previewLayerView.frame.origin.y + previewLayerView.frame.size.height) - rectangle.topLeft.y > 150 ||
-             (previewLayerView.frame.origin.y + previewLayerView.frame.size.height) - rectangle.topRight.y > 150 ||
-             previewLayerView.frame.origin.y - rectangle.bottomLeft.y > 150 ||
-             previewLayerView.frame.origin.y - rectangle.bottomRight.y > 150) {
-    return RCIPDFRectangeTypeTooFar;
-  }
-  return RCIPDFRectangeTypeGood;
 }
 
 /*!

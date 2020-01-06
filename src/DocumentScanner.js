@@ -1,24 +1,22 @@
-import { PropTypes } from 'prop-types'
-import React, { PureComponent } from 'react'
-import { ActivityIndicator, Animated, Dimensions, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/Ionicons'
-
-import styleVariables from '../../styles/Variables'
-import RectangleOverlay from './RectangleOverlay'
-import Scanner from './Scanner'
-import ScannerFilters, { COLOR_FILTER, IOS_PHOTO_FILTER } from './ScannerFilters'
+import { PropTypes } from 'prop-types';
+import React, { PureComponent } from 'react';
+import { ActivityIndicator, Animated, Dimensions, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import RectangleOverlay from './RectangleOverlay';
+import Scanner from './Scanner';
+import ScannerFilters, { COLOR_FILTER, PHOTO_FILTER } from './ScannerFilters';
 
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     height: 70,
     justifyContent: 'center',
-    width: 65
+    width: 65,
   },
   buttonActionGroup: {
     flex: 1,
     flexDirection: 'column',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
   buttonBottomContainer: {
     alignItems: 'flex-end',
@@ -27,7 +25,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     left: 25,
     position: 'absolute',
-    right: 25
+    right: 25,
   },
   buttonContainer: {
     alignItems: 'flex-end',
@@ -36,21 +34,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     position: 'absolute',
     right: 25,
-    top: 25
+    top: 25,
   },
   buttonGroup: {
     backgroundColor: '#00000080',
-    borderRadius: 17
+    borderRadius: 17,
   },
   buttonIcon: {
     color: 'white',
     fontSize: 22,
     marginBottom: 3,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: 13
+    fontSize: 13,
   },
   buttonTopContainer: {
     alignItems: 'flex-start',
@@ -59,35 +57,35 @@ const styles = StyleSheet.create({
     left: 25,
     position: 'absolute',
     right: 25,
-    top: 40
+    top: 40,
   },
   cameraButton: {
     backgroundColor: 'white',
     borderRadius: 50,
     flex: 1,
-    margin: 3
+    margin: 3,
   },
   cameraNotAvailableContainer: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    marginHorizontal: styleVariables.contentMargin
+    marginHorizontal: 15,
   },
   cameraNotAvailableText: {
     color: 'white',
     fontSize: 25,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   cameraOutline: {
     borderColor: 'white',
     borderRadius: 50,
     borderWidth: 3,
     height: 70,
-    width: 70
+    width: 70,
   },
   container: {
     backgroundColor: 'black',
-    flex: 1
+    flex: 1,
   },
   flashControl: {
     alignItems: 'center',
@@ -96,16 +94,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     margin: 8,
     paddingTop: 7,
-    width: 50
+    width: 50,
   },
   loadingCameraMessage: {
     color: 'white',
     fontSize: 18,
     marginTop: 10,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   loadingContainer: {
-    alignItems: 'center', flex: 1, justifyContent: 'center'
+    alignItems: 'center', flex: 1, justifyContent: 'center',
   },
   overlay: {
     bottom: 0,
@@ -113,7 +111,7 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
-    top: 0
+    top: 0,
   },
   processingContainer: {
     alignItems: 'center',
@@ -121,12 +119,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     height: 140,
     justifyContent: 'center',
-    width: 200
+    width: 200,
   },
   scanner: {
-    flex: 1
-  }
-})
+    flex: 1,
+  },
+});
 
 export default class DocumentScanner extends PureComponent {
   static propTypes = {
@@ -138,7 +136,7 @@ export default class DocumentScanner extends PureComponent {
     onPictureProcessed: PropTypes.func,
     hideSkip: PropTypes.bool,
     initialFilterId: PropTypes.number,
-    onFilterIdChange: PropTypes.func
+    onFilterIdChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -150,16 +148,16 @@ export default class DocumentScanner extends PureComponent {
     onPictureProcessed: () => {},
     onFilterIdChange: () => {},
     hideSkip: false,
-    initialFilterId: Platform.OS === 'ios' ? IOS_PHOTO_FILTER.id : COLOR_FILTER.id
+    initialFilterId: Platform.OS === 'ios' ? PHOTO_FILTER.id : COLOR_FILTER.id,
   }
 
-  constructor (props) {
-    super(props)
+  constructor(props) {
+    super(props);
     this.state = {
       flashEnabled: false,
       showScannerView: false,
       didLoadInitialLayout: false,
-      filterId: props.initialFilterId || Platform.OS === 'ios' ? IOS_PHOTO_FILTER.id : COLOR_FILTER.id,
+      filterId: props.initialFilterId || Platform.OS === 'ios' ? PHOTO_FILTER.id : COLOR_FILTER.id,
       detectedRectangle: false,
       isMultiTasking: false,
       loadingCamera: true,
@@ -170,143 +168,143 @@ export default class DocumentScanner extends PureComponent {
         initialized: false,
         hasCamera: false,
         permissionToUseCamera: false,
-        flashIsAvailable: false
-      }
-    }
+        flashIsAvailable: false,
+      },
+    };
 
-    this.camera = React.createRef()
-    this.imageProcessorTimeout = null
+    this.camera = React.createRef();
+    this.imageProcessorTimeout = null;
   }
 
-  componentDidMount () {
+  componentDidMount() {
     if (this.state.didLoadInitialLayout && !this.state.isMultiTasking) {
-      this.turnOnCamera()
+      this.turnOnCamera();
     }
   }
 
-  componentDidUpdate () {
+  componentDidUpdate() {
     if (this.state.didLoadInitialLayout) {
-      if (this.state.isMultiTasking) return this.turnOffCamera(true)
+      if (this.state.isMultiTasking) return this.turnOffCamera(true);
       if (this.state.device.initialized) {
-        if (!this.state.device.hasCamera) return this.turnOffCamera()
-        if (!this.state.device.permissionToUseCamera) return this.turnOffCamera()
+        if (!this.state.device.hasCamera) return this.turnOffCamera();
+        if (!this.state.device.permissionToUseCamera) return this.turnOffCamera();
       }
 
       if (this.props.cameraIsOn === true && !this.state.showScannerView) {
-        return this.turnOnCamera()
+        return this.turnOnCamera();
       }
 
       if (this.props.cameraIsOn === false && this.state.showScannerView) {
-        return this.turnOffCamera(true)
+        return this.turnOffCamera(true);
       }
 
       if (this.props.cameraIsOn === undefined) {
-        return this.turnOnCamera()
+        return this.turnOnCamera();
       }
     }
-    return null
+    return null;
   }
 
-  componentWillUnmount () {
-    clearTimeout(this.imageProcessorTimeout)
+  componentWillUnmount() {
+    clearTimeout(this.imageProcessorTimeout);
   }
 
   onDeviceSetup = (deviceDetails) => {
-    const { hasCamera, permissionToUseCamera, flashIsAvailable } = deviceDetails
+    const { hasCamera, permissionToUseCamera, flashIsAvailable } = deviceDetails;
     this.setState({
       loadingCamera: false,
       device: {
         initialized: true,
         hasCamera,
         permissionToUseCamera,
-        flashIsAvailable
-      }
-    })
+        flashIsAvailable,
+      },
+    });
   }
 
   onFilterIdChange = (id) => {
-    this.setState({ filterId: id })
-    this.props.onFilterIdChange(id)
+    this.setState({ filterId: id });
+    this.props.onFilterIdChange(id);
   }
 
-  getCameraDisabledMessage () {
+  getCameraDisabledMessage() {
     if (this.state.isMultiTasking) {
-      return 'Camera is not allowed in multi tasking mode.'
+      return 'Camera is not allowed in multi tasking mode.';
     }
 
-    const { device } = this.state
+    const { device } = this.state;
     if (device.initialized) {
       if (!device.hasCamera) {
-        return 'Could not find a camera on the device.'
+        return 'Could not find a camera on the device.';
       }
       if (!device.permissionToUseCamera) {
-        return 'Permission to use camera has not been granted.'
+        return 'Permission to use camera has not been granted.';
       }
     }
-    return 'Failed to set up the camera.'
+    return 'Failed to set up the camera.';
   }
 
   capture = () => {
-    if (this.state.takingPicture) return
-    if (this.state.processingImage) return
-    this.setState({ takingPicture: true, processingImage: true })
-    this.camera.current.capture()
-    this.triggerSnapAnimation()
+    if (this.state.takingPicture) return;
+    if (this.state.processingImage) return;
+    this.setState({ takingPicture: true, processingImage: true });
+    this.camera.current.capture();
+    this.triggerSnapAnimation();
 
     // If capture failed, allow for additional captures
     this.imageProcessorTimeout = setTimeout(() => {
       if (this.state.takingPicture) {
-        this.setState({ takingPicture: false })
+        this.setState({ takingPicture: false });
       }
-    }, 100)
+    }, 100);
   }
 
   onPictureTaken = (event) => {
-    this.setState({ takingPicture: false })
-    this.props.onPictureTaken(event)
+    this.setState({ takingPicture: false });
+    this.props.onPictureTaken(event);
   }
 
   onPictureProcessed = (event) => {
-    this.props.onPictureProcessed(event)
+    this.props.onPictureProcessed(event);
     this.setState({
       takingPicture: false,
       processingImage: false,
-      showScannerView: this.props.cameraIsOn || false
-    })
+      showScannerView: this.props.cameraIsOn || false,
+    });
   }
 
-  triggerSnapAnimation () {
+  triggerSnapAnimation() {
     Animated.sequence([
       Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.2, duration: 100 }),
       Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 50 }),
       Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.6, delay: 100, duration: 120 }),
-      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 90 })
-    ]).start()
+      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 90 }),
+    ]).start();
   }
 
-  turnOffCamera (shouldUninitializeCamera = false) {
+  turnOffCamera(shouldUninitializeCamera = false) {
     if (shouldUninitializeCamera && this.state.device.initialized) {
       this.setState(({ device }) => ({
         showScannerView: false,
-        device: { ...device, initialized: false }
-      }))
+        device: { ...device, initialized: false },
+      }));
     } else if (this.state.showScannerView) {
-      this.setState({ showScannerView: false })
+      this.setState({ showScannerView: false });
     }
   }
 
-  turnOnCamera () {
+  turnOnCamera() {
     if (!this.state.showScannerView) {
       this.setState({
         showScannerView: true,
-        loadingCamera: true
-      })
+        loadingCamera: true,
+      });
     }
   }
 
-  renderFlashControl () {
-    const { flashEnabled, device } = this.state
-    if (!device.flashIsAvailable) return null
+  renderFlashControl() {
+    const { flashEnabled, device } = this.state;
+    if (!device.flashIsAvailable) return null;
     return (
       <TouchableOpacity
         style={[styles.flashControl, { backgroundColor: flashEnabled ? '#FFFFFF80' : '#00000080' }]}
@@ -315,15 +313,15 @@ export default class DocumentScanner extends PureComponent {
       >
         <Icon name="ios-flashlight" style={[styles.buttonIcon, { fontSize: 28, color: flashEnabled ? '#333' : '#FFF' }]} />
       </TouchableOpacity>
-    )
+    );
   }
 
-  renderCameraControls () {
-    const dimensions = Dimensions.get('window')
-    const aspectRatio = dimensions.height / dimensions.width
-    const isPhone = aspectRatio > 1.6
-    const cameraIsDisabled = this.state.takingPicture || this.state.processingImage
-    const disabledStyle = { opacity: cameraIsDisabled ? 0.8 : 1 }
+  renderCameraControls() {
+    const dimensions = Dimensions.get('window');
+    const aspectRatio = dimensions.height / dimensions.width;
+    const isPhone = aspectRatio > 1.6;
+    const cameraIsDisabled = this.state.takingPicture || this.state.processingImage;
+    const disabledStyle = { opacity: cameraIsDisabled ? 0.8 : 1 };
     if (!isPhone) {
       if (dimensions.height < 500) {
         return (
@@ -367,7 +365,7 @@ export default class DocumentScanner extends PureComponent {
               </View>
             </View>
           </View>
-        )
+        );
       }
       return (
         <View style={styles.buttonContainer}>
@@ -410,7 +408,7 @@ export default class DocumentScanner extends PureComponent {
             </View>
           </View>
         </View>
-      )
+      );
     }
 
     return (
@@ -456,11 +454,11 @@ export default class DocumentScanner extends PureComponent {
           </View>
         </View>
       </>
-    )
+    );
   }
 
-  renderCameraOverlay () {
-    let loadingState = null
+  renderCameraOverlay() {
+    let loadingState = null;
     if (this.state.loadingCamera) {
       loadingState = (
         <View style={styles.overlay}>
@@ -469,7 +467,7 @@ export default class DocumentScanner extends PureComponent {
             <Text style={styles.loadingCameraMessage}>Loading Camera</Text>
           </View>
         </View>
-      )
+      );
     } else if (this.state.processingImage) {
       loadingState = (
         <View style={styles.overlay}>
@@ -480,7 +478,7 @@ export default class DocumentScanner extends PureComponent {
             </View>
           </View>
         </View>
-      )
+      );
     }
 
     return (
@@ -490,18 +488,18 @@ export default class DocumentScanner extends PureComponent {
           {this.renderCameraControls()}
         </SafeAreaView>
       </>
-    )
+    );
   }
 
-  renderCameraView () {
+  renderCameraView() {
     if (this.state.showScannerView) {
-      let rectangleOverlay = null
+      let rectangleOverlay = null;
       if (!this.state.loadingCamera && !this.state.processingImage) {
         rectangleOverlay = (
           <RectangleOverlay
             detectedRectangle={this.state.detectedRectangle}
           />
-        )
+        );
       }
       return (
         <>
@@ -521,10 +519,10 @@ export default class DocumentScanner extends PureComponent {
           <Animated.View style={{ ...styles.overlay, backgroundColor: 'white', opacity: this.state.overlayFlashOpacity }} />
           {this.renderCameraOverlay()}
         </>
-      )
+      );
     }
 
-    let message = null
+    let message = null;
     if (this.state.loadingCamera) {
       message = (
         <View style={styles.overlay}>
@@ -533,13 +531,13 @@ export default class DocumentScanner extends PureComponent {
             <Text style={styles.loadingCameraMessage}>Loading Camera</Text>
           </View>
         </View>
-      )
+      );
     } else {
       message = (
         <Text style={styles.cameraNotAvailableText}>
           {this.getCameraDisabledMessage()}
         </Text>
-      )
+      );
     }
 
     return (
@@ -571,33 +569,33 @@ export default class DocumentScanner extends PureComponent {
         </View>
       </View>
 
-    )
+    );
   }
 
-  render () {
+  render() {
     return (
       <View
         style={styles.container}
         onLayout={(event) => {
-          this.props.onLayout(event)
+          this.props.onLayout(event);
           if (this.state.didLoadInitialLayout && Platform.OS === 'ios') {
-            const screenWidth = Dimensions.get('screen').width
+            const screenWidth = Dimensions.get('screen').width;
             const isMultiTasking = (
               Math.round(event.nativeEvent.layout.width) < Math.round(screenWidth)
-            )
+            );
             if (isMultiTasking) {
-              this.setState({ isMultiTasking: true, loadingCamera: false })
+              this.setState({ isMultiTasking: true, loadingCamera: false });
             } else {
-              this.setState({ isMultiTasking: false })
+              this.setState({ isMultiTasking: false });
             }
           } else {
-            this.setState({ didLoadInitialLayout: true })
+            this.setState({ didLoadInitialLayout: true });
           }
         }}
       >
         <StatusBar backgroundColor="black" barStyle="light-content" hidden={Platform.OS !== 'android'} />
         {this.renderCameraView()}
       </View>
-    )
+    );
   }
 }

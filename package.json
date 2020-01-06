@@ -13,16 +13,7 @@
     "react-native.config.js"
   ],
   "scripts": {
-    "test": "jest",
-    "ci:test": "jest --passWithNoTests",
-    "typescript": "tsc --noEmit",
-    "lint": "eslint --ext .js,.ts,.tsx .",
-    "release": "release-it",
-    "example": "yarn --cwd example",
-    "bootstrap": "yarn example && yarn",
-    "prepare": "bob build",
-    "ci:publish": "semantic-release",
-    "semantic-release": "semantic-release"
+    "test": "jest"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -75,5 +66,10 @@
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
     ]
+  },
+  "dependencies": {
+    "prop-types": "^15.7.2",
+    "react-native-svg": "^10.0.0",
+    "react-native-vector-icons": "^6.6.0"
   }
 }

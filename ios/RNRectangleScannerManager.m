@@ -1,19 +1,29 @@
+//
+//  RNRectangleScannerManager.m
+//
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
+//
 
-#import "RCPdfScannerManager.h"
-#import "RCDocumentScannerView.h"
 
-@interface RCPdfScannerManager()
-@property (strong, nonatomic) RCDocumentScannerView *scannerView;
+#import "RNRectangleScannerManager.h"
+#import "RNRectangleScannerView.h"
+
+@interface RNRectangleScannerManager()
+@property (strong, nonatomic) RNRectangleScannerView *scannerView;
 @end
 
-@implementation RCPdfScannerManager
+/*!
+The React view manager. Exports props/methods to react
+*/
+@implementation RNRectangleScannerManager
 
 - (dispatch_queue_t)methodQueue
 {
     return dispatch_get_main_queue();
 }
 
-RCT_EXPORT_MODULE(RCPdfScannerManager)
+RCT_EXPORT_MODULE(RNRectangleScannerManager)
 
 
 /*!
@@ -96,7 +106,7 @@ RCT_EXPORT_VIEW_PROPERTY(onRectangleDetected, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onTorchChanged, RCTBubblingEventBlock)
 
 - (UIView*) view {
-  _scannerView = [[RCDocumentScannerView alloc] init];
+  _scannerView = [[RNRectangleScannerView alloc] init];
   return _scannerView;
 }
 

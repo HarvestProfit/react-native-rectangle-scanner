@@ -1,20 +1,12 @@
 //
-//  IPDFCameraViewController.h
-//  InstaPDF
+//  CameraDeviceController.h
 //
-//  Created by Maximilian Mackh on 06/01/15.
-//  Copyright (c) 2015 mackh ag. All rights reserved.
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
-#import <React/RCTViewManager.h>
-
-typedef NS_ENUM(NSInteger, CameraFilterTypes)
-{
-  CameraFilterSepiaType,
-  CameraFilterBlackAndWhiteType
-};
 
 @interface CameraDeviceController : UIView
 
@@ -31,7 +23,6 @@ typedef NS_ENUM(NSInteger, CameraFilterTypes)
 - (CIImage *)processOutput:(CIImage *)image;
 - (UIView *)getPreviewLayerView;
 - (CGRect)getBounds;
-- (CIImage *)detectionFilter:(CIImage *)image;
 
 - (void)deviceWasSetup:(NSDictionary *)config;
 - (void)torchWasChanged:(BOOL)enableTorch;

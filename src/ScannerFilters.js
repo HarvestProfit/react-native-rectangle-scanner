@@ -3,18 +3,19 @@ import React, { Component } from 'react';
 import { Platform, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export const COLOR_FILTER = { id: 1, name: 'Color' };
-export const BLACK_AND_WHITE_FILTER = { id: 2, name: 'Black & White' };
-export const IOS_GREYSCALE_FILTER = { id: 3, name: 'Greyscale' };
-export const IOS_PHOTO_FILTER = { id: 4, name: 'Photo' };
+export const PHOTO_FILTER = { id: 1, name: 'Photo' };
+export const GREYSCALE_FILTER = { id: 2, name: 'Greyscale' };
+export const COLOR_FILTER = { id: 3, name: 'Color' };
+export const BLACK_AND_WHITE_FILTER = { id: 4, name: 'Black & White' };
+
 
 const FILTERS = [
   COLOR_FILTER,
   BLACK_AND_WHITE_FILTER,
 ];
 if (Platform.OS === 'ios') {
-  FILTERS.push(IOS_GREYSCALE_FILTER);
-  FILTERS.push(IOS_PHOTO_FILTER);
+  FILTERS.push(GREYSCALE_FILTER);
+  FILTERS.push(PHOTO_FILTER);
 }
 
 export default class AddTicket extends Component {

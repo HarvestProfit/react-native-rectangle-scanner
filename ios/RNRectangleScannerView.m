@@ -1,6 +1,16 @@
-#import "RCDocumentScannerView.h"
+//
+//  RNRectangleScannerView.m
+//
+//  Created by Jake Humphrey on Jan 6, 2020.
+//  Copyright (c) 2020 Jake Humphrey. All rights reserved.
+//
 
-@implementation RCDocumentScannerView
+#import "RNRectangleScannerView.h"
+
+/*!
+ Wraps up the camera and rectangle detection code into a simple interface.  Allows you to call start, stop, cleanup, and capture. Also is responsible for deterining how to cache the output images.
+ */
+@implementation RNRectangleScannerView
 
 - (instancetype)init {
   self = [super init];
