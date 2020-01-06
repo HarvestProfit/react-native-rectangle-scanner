@@ -8,7 +8,7 @@ public class ImageProcessorMessage  {
     private String command;
     private Object obj;
 
-    public OpenNoteMessage(String command , Object obj ) {
+    public ImageProcessorMessage(String command , Object obj ) {
         setObj(obj);
         setCommand(command);
     }
