@@ -48,8 +48,8 @@ RectangleOverlay.propTypes = {
 
 RectangleOverlay.defaultProps = {
   detectedRectangle: false,
-  backgroundColor: 'rgba(255,181,6, 0.3)',
-  borderColor: 'rgb(255,181,6)',
+  backgroundColor: 'rgba(255,203,6, 0.3)',
+  borderColor: 'rgb(255,203,6)',
   borderWidth: 5,
 
 };
