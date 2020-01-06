@@ -169,7 +169,7 @@ public class ImageProcessor extends Handler {
 
             if (insideArea(foundPoints, size)) {
 
-                return new Quadrilateral(c, foundPoints, srcSize);
+                return new Quadrilateral(c, foundPoints, new Size(srcSize.width / ratio, srcSize.height / ratio));
             }
             // }
         }

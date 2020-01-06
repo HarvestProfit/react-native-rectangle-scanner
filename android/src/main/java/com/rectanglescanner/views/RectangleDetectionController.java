@@ -10,8 +10,8 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
-import com.rectanglescanner.ImageProcessor;
 import com.rectanglescanner.R;
+import com.rectanglescanner.helpers.ImageProcessor;
 import com.rectanglescanner.helpers.CustomOpenCVLoader;
 import com.rectanglescanner.helpers.ImageProcessorMessage;
 import com.rectanglescanner.helpers.CapturedImage;

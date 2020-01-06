@@ -4,6 +4,8 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 
+import android.os.Bundle;
+
 /**
  * Created by Jake on Jan 6, 2020.
  */
@@ -42,8 +44,8 @@ public class Quadrilateral {
       quadMap.putBundle("topRight", topRight);
 
       Bundle dimensions = new Bundle();
-      dimensions.putDouble("height", this.sourceSize.height / ratio);
-      dimensions.putDouble("width", this.sourceSize.width / ratio);
+      dimensions.putDouble("height", this.sourceSize.height);
+      dimensions.putDouble("width", this.sourceSize.width);
       quadMap.putBundle("dimensions", dimensions);
 
       return quadMap;

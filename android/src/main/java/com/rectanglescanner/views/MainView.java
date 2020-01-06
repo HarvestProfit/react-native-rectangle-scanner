@@ -12,7 +12,7 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.rectanglescanner.R;
 
 public class MainView extends FrameLayout {
-    private RCrectanglescannerView view;
+    private RNRectangleScannerView view;
 
     public static MainView instance = null;
 
@@ -30,7 +30,7 @@ public class MainView extends FrameLayout {
         LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         FrameLayout frameLayout = (FrameLayout) lf.inflate(R.layout.activity_rectangle_scanner, null);
 
-        view = new RCrectanglescannerView(context, -1, activity, frameLayout);
+        view = new RNRectangleScannerView(context, -1, activity, frameLayout);
         view.setParent(this);
         addViewInLayout(view, 0, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         addViewInLayout(frameLayout, 1, view.getLayoutParams());
