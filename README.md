@@ -88,7 +88,7 @@ class DocumentScanner extends Component {
 }
 ```
 
-Full example in [example folder](https://github.com/Woonivers/react-native-document-scanner/tree/master/example).
+Above is a very barebones version of the scanner. Check out a full example in [example folder](example/CompleteExample.js). That will handle device specific things, rendering error states, camera controls for different device sizes, mult tasking mode, etc. This is what I would consider the production ready version of using this package (it's actually very similar to the component(s) that we use in production.
 
 
 ## Properties
