@@ -1,34 +1,33 @@
-![Demo gif](https://raw.githubusercontent.com/Michaelvilleneuve/react-native-document-scanner/master/images/demo.gif)
+![Demo gif](images/demo.gif)
+# `react-native-rectangle-scanner`
 
-# `@woonivers/react-native-document-scanner`
+![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
 
-[![CircleCI Status](https://img.shields.io/circleci/project/github/Woonivers/react-native-document-scanner/master.svg)](https://circleci.com/gh/Woonivers/workflows/react-native-document-scanner/tree/master) ![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
-
-Live document detection library. Returns either a URI of the captured image, allowing you to easily store it or use it as you wish!
+Live photo rectangle detection library useful for scanning documents. On capture, it returns the URIs for the original and a cropped version of the image allowing you to use the images as you want. You can additionally apply filters to adjust the visibility of text on the image (similar to the iOS document scanner filters).
 
 - Live detection
 - Perspective correction and crop of the image
+- Filters
 - Flash
+- Orientation Changes
+- Camera permission and capabilities detection
+- Fully customizable UI
 
 ## Getting started
-
-Version `>=2.0.0` is thinking to work with React Native >= 0.60
-
-> Use [version `1.6.2`](https://github.com/Woonivers/react-native-document-scanner/tree/v1.6.2) if you are using React Native 0.59
 
 Install the library using either yarn:
 
 ```sh
-yarn add @woonivers/react-native-document-scanner`
+yarn add react-native-rectangle-scanner`
 ```
 
 or npm:
 
 ```sh
-npm install @woonivers/react-native-document-scanner --save
+npm install react-native-rectangle-scanner --save
 ```
 
-Remember, this library uses your device's camera, **it cannot run on a simulator** and you must request **camera permission** by your own.
+This package can be ran on a simulator, android simulators work a bit better, iOS simulators will simply return `false` for `hasCamera` on device setup.
 
 ### iOS Only
 
@@ -44,22 +43,10 @@ If you do not have it already in your project, you must link openCV in your `set
 
 ```java
 include ':openCVLibrary310'
-project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules/@woonivers/react-native-document-scanner/android/openCVLibrary310')
+project(':openCVLibrary310').projectDir = new File(rootProject.projectDir,'../node_modules//react-native-rectangle-scanner/android/openCVLibrary310')
 ```
 
 #### In android/app/src/main/AndroidManifest.xml
-
-Change manifest header to avoid "Manifest merger error". After you add `xmlns:tools="http://schemas.android.com/tools"` should look like this:
-
-```
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.<yourAppName>" xmlns:tools="http://schemas.android.com/tools">
-```
-
-Add `tools:replace="android:allowBackup"` in <application tag. It should look like this:
-
-```
-<application tools:replace="android:allowBackup" android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="false" android:theme="@style/AppTheme">
-```
 
 Add Camera permissions request:
 
@@ -69,106 +56,79 @@ Add Camera permissions request:
 
 ## Usage
 
+This is the most barebones usage of this. It will show a fullscreen camera preview with no controls on it. Calling `this.camera.current.capture()` will trigger a capture and after the image has been captured and processed (cropped, filtered, stored/cached), it will trigger the `onPictureProcessed` callback.
+
+
 ```javascript
 import React, { Component, useRef } from "react"
 import { View, Image } from "react-native"
 
-import DocumentScanner from "@woonivers/react-native-document-scanner"
+import Scanner from "react-native-rectangle-scanner"
 
-function YourComponent(props) {
-  return (
-    <View>
-      <DocumentScanner
-        style={styles.scanner}
-        onPictureTaken={handleOnPictureTaken}
-        overlayColor="rgba(255,130,0, 0.7)"
-        enableTorch={false}
-        quality={0.5}
-        detectionCountBeforeCapture={5}
-        detectionRefreshRateInMS={50}
+class DocumentScanner extends Component {
+
+  handleOnPictureProcessed = ({croppedImage, initialImage}) => {
+    this.props.doSomethingWithCroppedImagePath(croppedImage);
+    this.props.doSomethingWithOriginalImagePath(initialImage);
+  }
+
+  onCapture = () => {
+    this.camera.current.capture();
+  }
+
+  render() {
+    return (
+      <Scanner
+        onPictureProcessed={this.handleOnPictureProcessed}
+        ref={this.camera}
+        style={{flex: 1}}
       />
-    </View>
-  )
+    );
+  }
 }
 ```
 
-Full example in [example folder](https://github.com/Woonivers/react-native-document-scanner/tree/master/example).
+Above is a very barebones version of the scanner. Check out a full example in [example folder](example/CompleteExample.js). That will handle device specific things, rendering error states, camera controls for different device sizes, mult tasking mode, etc. This is what I would consider the production ready version of using this package (it's actually very similar to the component(s) that we use in production.
+
 
 ## Properties
 
-| Prop                        | Platform | Default |   Type    | Description                                                         |
-| :-------------------------- | :------: | :-----: | :-------: | :------------------------------------------------------------------ |
-| overlayColor                |   Both   | `none`  | `string`  | Color of the detected rectangle : rgba recommended                  |
-| detectionCountBeforeCapture |   Both   |   `5`   | `integer` | Number of correct rectangle to detect before capture                |
-| detectionRefreshRateInMS    |   iOS    |  `50`   | `integer` | Time between two rectangle detection attempt                        |
-| enableTorch                 |   Both   | `false` |  `bool`   | Allows to active or deactivate flash during document detection      |
-| useFrontCam                 |   iOS    | `false` |  `bool`   | Allows you to switch between front and back camera                  |
-| brightness                  |   iOS    |   `0`   |  `float`  | Increase or decrease camera brightness. Normal as default.          |
-| saturation                  |   iOS    |   `1`   |  `float`  | Increase or decrease camera saturation. Set `0` for black & white   |
-| contrast                    |   iOS    |   `1`   |  `float`  | Increase or decrease camera contrast. Normal as default             |
-| quality                     |   iOS    |  `0.8`  |  `float`  | Image compression. Reduces both image size and quality              |
-| useBase64                   |   iOS    | `false` |  `bool`   | If base64 representation should be passed instead of image uri's    |
-| saveInAppDocument           |   iOS    | `false` |  `bool`   | If should save in app document in case of not using base 64         |
-| captureMultiple             |   iOS    | `false` |  `bool`   | Keeps the scanner on after a successful capture                     |
-| saveOnDevice                | Android  | `false` |  `bool`   | Save the image in the device storage (**Need storage permissions**) |
+| Prop                        | Platform | Default |   Type    | Description                                                |
+| :-------------------------- | :------: | :-----: | :-------: | :--------------------------------------------------------- |
+| filterId                    |   Both   | `none`  | `integer` | The id of the filter to use. [See More](#filters)                  |
+| enableTorch                 |   Both   | `false` |  `bool`   | If the flashlight should be turned on                      |
+| capturedQuality             |   iOS    |  `0.5`  |  `float`  | The jpeg quality of the output images                      |
+| onTorchChanged              |   Both   | `null`  |  `func`   | Called when the system changes the flash state |
+| onRectangleDetected         |   Both   | `null`  |  `func`   | Called when the system detects a rectangle on the image, sends the coordinates  |
+| onPictureTaken              |   Both   | `null`  |  `func`   | Called after an image is captured. It hasn't been cached yet but it will send you the URIs of where it will store it  |
+| onPictureProcessed          |   Both   | `null`  |  `func`   | Called after an image was captured and cached. It sends the URIs of where it stored the images.  |
+| styles                      |   Both   | `null`  |  `object` | Styles the camera view (works best on fullscreen/flex: 1). | 
 
-## Manual capture
 
-- First create a mutable ref object:
+### Torch
+When changing the `enableTorch` property, the system will call the `onTorchChanged({enabled})` callback as well with the new state. This allows you to keep your component state in sync. Natively the torch will get turned off when the component cleans up or after an image is captured. This allows you to update the state.
 
-```javascript
-const documentScannerElement = useRef(null)
-```
+### Rectangle Detection
+Rectangle detection does NOT show up on the UI automatically. You must take the coordinates from the `onRectangleDetected({detectedRectangle})` callback and render a view that displays a rectangle over the camera view. This can be done easily with a simple SVG by importing `RectangleOverlay` from this package and feeding it the detected rectangle object. 
 
-- Pass a ref object to your component:
+Why not just handle in natively? Because it allows much more customization of the rectangle overlay. For example, you could black out the entire image, except where the detected rectangle is.  You could make an awesome component that also detects the confidence of the detected rectangle and do **auto capturing**.
 
-```javascript
-<DocumentScanner ref={documentScannerElement} />
-```
+### Capturing An Image
+To capture an image, you must create a ref to the component. This ref will allow you to call `capture()` which will trigger the capture asynchronously.
 
-- Then call:
+Once triggered, it will take the current detected rectangle and crop, apply filters, and transform the image to correct the perspective. It will call `onPictureTaken({croppedImage, initialImage})` containing the URIs of the cropped image and the original image. NOTE: The image still needs to be cached which can take a few ms, so loading the image will not work yet.
 
-```javascript
-documentScannerElement.current.capture()
-```
+The picture will then start to be processed and cached. Once done, it will call `onPictureProcessed({croppedImage, initialImage})` containing the URIs of the images. This is called after the image is cached which means you can load the images into the UI.
 
-## Each rectangle detection (iOS only) _-Non tested-_
+NOTE: There is no UI changes when you capture an image. No screen flash, only a camera sound. This is meant so you can design how you want. *The easiest way is to just use an animated view to flash a white screen.*
 
-| Props             | Params                                 | Type     | Description |
-| ----------------- | -------------------------------------- | -------- | ----------- |
-| onRectangleDetect | `{ stableCounter, lastDetectionType }` | `object` | See below   |
+### Filters
+Instead of allowing you to customize the contrast, saturation, etc of the image, I prebuilt the filters. This is because the filter controls are massively different between platforms and changing those values results in much different image outputs. Below are the avilable filters. Honestly, the color controls where pretty bad on android, so the best ones for android are probably just using the Color and Black & White instead of showing all 4 (they are only slightly better than Greyscale and the original photo).
 
-The returned object includes the following keys :
+| ID | Name          | Default | Description                            | Preview                                    |
+| -- | ------------- | ------- | -------------------------------------- | -------------------------------------------|
+| 1  | Color         |         | Optimzed for legibility with color.    | ![Color jpeg](images/color.jpeg)           |
+| 2  | Black & White |         | Optimized for legibility without color | ![Color jpeg](images/black-and-white.jpeg) |
+| 3  | Greyscale     |         | A black & white version of the image   | ![Color jpeg](images/greyscale.jpeg)       |
+| 4  | Photo         | YES     | Just the photo                         | ![Color jpeg](images/photo.jpeg)           |
 
-- `stableCounter`
-
-Number of correctly formated rectangle found (this number triggers capture once it goes above `detectionCountBeforeCapture`)
-
-- `lastDetectionType`
-
-Enum (0, 1 or 2) corresponding to the type of rectangle found
-
-0. Correctly formated rectangle
-1. Wrong perspective, bad angle
-1. Too far
-
-## Returned image
-
-| Prop           | Params |   Type   | Description                                                                                                                                                                         |
-| :------------- | :----: | :------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| onPictureTaken | `data` | `object` | Returns the captured image in an object `{ croppedImage: ('URI or BASE64 string'), initialImage: 'URI or BASE64 string', rectangleCoordinates[only iOS]: 'object of coordinates' }` |
-
-## Save in app document _-Non tested-_
-
-If you want to use saveInAppDocument options, then don't forget to add those raws in .plist :
-
-```xml
-<key>LSSupportsOpeningDocumentsInPlace</key>
-<true/>
-```
-
-# Contributors
-
-## Set up dev environment
-
-[Medium article](https://medium.com/@charpeni/setting-up-an-example-app-for-your-react-native-library-d940c5cf31e4)
