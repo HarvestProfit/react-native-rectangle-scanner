@@ -51,13 +51,16 @@
     "jest": "24.9.0",
     "jest-enzyme": "^7.0.2",
     "jest-junit": "^6.4.0",
+    "prop-types": "^15.7.2",
     "react": "16.8.3",
     "react-dom": "16.8.3",
-    "react-native": "~0.59.8"
+    "react-native": "~0.59.8",
+    "react-native-svg": "^10.0.0"
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-svg": "*"
   },
   "jest": {
     "preset": "react-native",
@@ -65,9 +68,5 @@
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
     ]
-  },
-  "dependencies": {
-    "prop-types": "^15.7.2",
-    "react-native-svg": "^10.0.0"
   }
 }
