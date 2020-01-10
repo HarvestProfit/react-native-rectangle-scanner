@@ -18,6 +18,7 @@ class Scanner extends React.Component {
     onDeviceSetup: PropTypes.func,
     onRectangleDetected: PropTypes.func,
     onTorchChanged: PropTypes.func,
+    cacheFolderName: PropTypes.string,
   };
 
   static defaultProps = {
@@ -27,6 +28,7 @@ class Scanner extends React.Component {
     onDeviceSetup: null,
     onRectangleDetected: null,
     capturedQuality: 0.5,
+    cacheFolderName: 'RNRectangleScanner',
   }
 
   constructor(props) {

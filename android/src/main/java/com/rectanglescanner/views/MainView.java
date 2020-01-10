@@ -47,6 +47,10 @@ public class MainView extends FrameLayout {
         view.setEnableTorch(enable);
     }
 
+    public void setCacheFolderName(String cacheFolderName) {
+      view.setCacheFolderName(cacheFolderName);
+    }
+
     public void setCapturedQuality(double quality) {
         view.setCapturedQuality(quality);
     }
