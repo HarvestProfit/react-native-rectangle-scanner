@@ -83,10 +83,6 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         return this.mFocused;
     }
 
-    public void setCapturedQuality(double quality) {
-      // TODO: Do something with this
-    }
-
     /**
      Toggles the flash on the camera device
      */
@@ -130,6 +126,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
      Starts the capture session
      */
     public void startCamera() {
+      Log.d(TAG, "Starting preview");
       if (this.isStopped) {
         try {
             if (!this.cameraIsSetup) {
@@ -149,6 +146,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
      Stops the capture session
      */
     public void stopCamera() {
+      Log.d(TAG, "Stopping preview");
       if (!this.isStopped) {
         try {
           if (mCamera != null) {
@@ -412,9 +410,9 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
 
     public void captureImageLater() {
       PackageManager pm = mActivity.getPackageManager();
-      if (safeToTakePicture) {
+      if (this.safeToTakePicture) {
 
-          safeToTakePicture = false;
+          this.safeToTakePicture = false;
 
           try {
               if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)) {
@@ -443,8 +441,9 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     }
 
     private void onPictureFailed() {
+        Log.d(TAG, "failed to capture image");
         mCamera.cancelAutoFocus();
-        safeToTakePicture = true;
+        this.safeToTakePicture = true;
     }
 
     /*!
@@ -453,12 +452,12 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         setEnableTorch(false);
+        this.safeToTakePicture = true;
         Camera.Size pictureSize = camera.getParameters().getPictureSize();
 
         Mat mat = new Mat(new Size(pictureSize.width, pictureSize.height), CvType.CV_8U);
         mat.put(0, 0, data);
         camera.cancelAutoFocus();
-        safeToTakePicture = true;
         handleCapturedImage(mat);
     }
     public void handleCapturedImage(Mat capturedImage) {}

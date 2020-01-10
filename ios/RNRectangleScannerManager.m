@@ -5,7 +5,6 @@
 //  Copyright (c) 2020 Jake Humphrey. All rights reserved.
 //
 
-
 #import "RNRectangleScannerManager.h"
 #import "RNRectangleScannerView.h"
 
@@ -40,11 +39,6 @@ RCT_EXPORT_VIEW_PROPERTY(capturedQuality, float)
  Determines what filter id to use (1, 2, 3, or 4)
  */
 RCT_EXPORT_VIEW_PROPERTY(filterId, int)
-
-/*!
- Determines what folder to store captured images under in the cache directory
- */
-RCT_EXPORT_VIEW_PROPERTY(cacheFolderName, NSstring)
 
 
 // MARK: Life cycle Actions
@@ -99,6 +93,11 @@ RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTBubblingEventBlock)
  Called when the captured frame is processed and saved to the temp file directory.
  */
 RCT_EXPORT_VIEW_PROPERTY(onPictureProcessed, RCTBubblingEventBlock)
+
+/*!
+ Called when a rectangle is detected
+ */
+RCT_EXPORT_VIEW_PROPERTY(onErrorProcessingImage, RCTBubblingEventBlock)
 
 /*!
  Called when a rectangle is detected

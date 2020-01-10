@@ -47,10 +47,6 @@ public class MainView extends FrameLayout {
         view.setEnableTorch(enable);
     }
 
-    public void setCacheFolderName(String cacheFolderName) {
-      view.setCacheFolderName(cacheFolderName);
-    }
-
     public void setCapturedQuality(double quality) {
         view.setCapturedQuality(quality);
     }
@@ -101,5 +97,10 @@ public class MainView extends FrameLayout {
     public void pictureWasProcessed(WritableMap pictureDetails) {
       final ReactContext context = (ReactContext) getContext();
       context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onPictureProcessed", pictureDetails);
+    }
+
+    public void pictureDidFailToProcess(WritableMap errorDetails) {
+      final ReactContext context = (ReactContext) getContext();
+      context.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "onErrorProcessingImage", errorDetails);
     }
 }

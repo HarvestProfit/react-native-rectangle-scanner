@@ -30,6 +30,13 @@
   BOOL _borderDetectFrame;
   CIRectangleFeature *_borderDetectLastRectangleFeature;
   CGRect _borderDetectLastRectangleBounds;
+  dispatch_queue_t _rectangleDetectionQueue;
+}
+
+- (instancetype)init {
+  self = [super init];
+  _rectangleDetectionQueue = dispatch_queue_create("RectangleDetectionQueue",NULL);
+  return self;
 }
 
 // MARK: Setters
@@ -63,7 +70,6 @@
 
   float detectionRefreshRate = 20;
   CGFloat detectionRefreshRateInSec = detectionRefreshRate/100;
-
   _borderDetectTimeKeeper = [NSTimer scheduledTimerWithTimeInterval:detectionRefreshRateInSec target:self selector:@selector(enableBorderDetectFrame) userInfo:nil repeats:YES];
 }
 
@@ -102,7 +108,7 @@
  Looks for a rectangle in the given image async
  */
 - (void)detectRectangleFromImageLater:(CIImage *)image {
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+  dispatch_async(_rectangleDetectionQueue, ^{
 
     @autoreleasepool {
       @try {
@@ -152,7 +158,7 @@ After an image is captured, this fuction is called and handles cropping the imag
     [self onProcessedCapturedImage:image initialImage: initialImage lastRectangleFeature: self->_borderDetectLastRectangleFeature];
   } else {
     UIImage *initialImage = [UIImage imageWithCIImage:capturedImage scale: 1.0 orientation:UIImageOrientationRight];
-    [self onProcessedCapturedImage:initialImage initialImage: initialImage lastRectangleFeature: nil];
+    [self onProcessedCapturedImage:nil initialImage: initialImage lastRectangleFeature: nil];
   }
 }
 

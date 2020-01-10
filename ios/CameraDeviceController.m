@@ -55,6 +55,7 @@ Represents the input from the camera device
   GLuint _renderBuffer;
   GLKView *_glkView;
   NSMutableDictionary *_deviceConfiguration;
+    dispatch_queue_t _captureImageQueue;
 }
 
 - (void)awakeFromNib
@@ -63,6 +64,12 @@ Represents the input from the camera device
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_backgroundMode) name:UIApplicationWillResignActiveNotification object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_foregroundMode) name:UIApplicationDidBecomeActiveNotification object:nil];
+}
+
+- (instancetype)init {
+  self = [super init];
+  _captureImageQueue = dispatch_queue_create("CaptureImageQueue",NULL);
+  return self;
 }
 
 /*!
@@ -502,7 +509,7 @@ Represents the input from the camera device
     intialImage = [intialImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-intialImage.extent.origin.x, -intialImage.extent.origin.y)];
 
     [self setEnableTorch: NO];
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(_captureImageQueue, ^{
       CIImage *enhancedImage = [self applyFilters:intialImage];
       self._isCapturing = NO;
       [self handleCapturedImage:enhancedImage];

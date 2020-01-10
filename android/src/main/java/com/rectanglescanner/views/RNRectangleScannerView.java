@@ -13,10 +13,12 @@ import com.facebook.react.bridge.WritableNativeMap;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.util.UUID;
 import java.io.File;
+import java.util.ArrayList;
 
 /**
   Created by Jake on Jan 6, 2020.
@@ -27,6 +29,7 @@ import java.io.File;
 */
 public class RNRectangleScannerView extends RectangleDetectionController {
     private String cacheFolderName = "RNRectangleScanner";
+    private double capturedQuality = 0.5;
 
     //================================================================================
     // Setup
@@ -40,6 +43,13 @@ public class RNRectangleScannerView extends RectangleDetectionController {
 
     public void setParent(MainView view) {
       this.parentView = view;
+    }
+
+    /**
+    Sets the jpeg quality of the output image
+    */
+    public void setCapturedQuality(double quality) {
+      this.capturedQuality = quality;
     }
 
     /**
@@ -66,11 +76,11 @@ public class RNRectangleScannerView extends RectangleDetectionController {
     }
 
     /**
-    Sets the folder under the cache directory that the captured images
-    will be stored under
+    Called if the picture faiiled to be captured
     */
-    public void setCacheFolderName(String cacheFolderName) {
-      this.cacheFolderName = cacheFolderName;
+    private void pictureDidFailToProcess(WritableMap errorDetails) {
+      Log.d(TAG, "picture failed to process");
+      this.parentView.pictureDidFailToProcess(errorDetails);
     }
 
     /**
@@ -109,48 +119,81 @@ public class RNRectangleScannerView extends RectangleDetectionController {
     public void onProcessedCapturedImage(CapturedImage capturedImage) {
       WritableMap pictureWasTakenConfig = new WritableNativeMap();
       WritableMap pictureWasProcessedConfig = new WritableNativeMap();
-      String croppedImageFileName = generateStoredFileName("C");
-      String originalImageFileName = generateStoredFileName("O");
+      String croppedImageFileName = null;
+      String originalImageFileName = null;
+      boolean hasCroppedImage = (capturedImage.processed != null);
+      try {
+        originalImageFileName = generateStoredFileName("O");
+        if (hasCroppedImage) {
+          croppedImageFileName = generateStoredFileName("C");
+        } else {
+          croppedImageFileName = originalImageFileName;
+        }
+      } catch(Exception e) {
+        WritableMap folderError = new WritableNativeMap();
+        folderError.putString("message", "Failed to create the cache directory");
+        pictureDidFailToProcess(folderError);
+        return;
+      }
+
       pictureWasTakenConfig.putString("croppedImage", "file://" + croppedImageFileName);
       pictureWasTakenConfig.putString("initialImage", "file://" + originalImageFileName);
       pictureWasProcessedConfig.putString("croppedImage", "file://" + croppedImageFileName);
       pictureWasProcessedConfig.putString("initialImage", "file://" + originalImageFileName);
       pictureWasTaken(pictureWasTakenConfig);
 
-      Mat doc = (capturedImage.processed != null) ? capturedImage.processed : capturedImage.original;
-      String fileName = this.saveToDirectory(doc, croppedImageFileName);
-      String initialFileName = this.saveToDirectory(capturedImage.original, originalImageFileName);
+      if (hasCroppedImage && !this.saveToDirectory(capturedImage.processed, croppedImageFileName)) {
+        WritableMap fileError = new WritableNativeMap();
+        fileError.putString("message", "Failed to write cropped image to cache");
+        fileError.putString("filePath", croppedImageFileName);
+        pictureDidFailToProcess(fileError);
+        return;
+      }
+      if (!this.saveToDirectory(capturedImage.original, originalImageFileName)) {
+        WritableMap fileError = new WritableNativeMap();
+        fileError.putString("message", "Failed to write original image to cache");
+        fileError.putString("filePath", originalImageFileName);
+        pictureDidFailToProcess(fileError);
+        return;
+      }
 
       pictureWasProcessed(pictureWasProcessedConfig);
-
-      Log.d(TAG, "wrote: " + fileName);
+      capturedImage.release();
+      Log.d(TAG, "Captured Images");
     }
 
-    private String generateStoredFileName(String name) {
+    private String generateStoredFileName(String name) throws Exception {
       String folderDir = this.mContext.getCacheDir().toString();
       File folder = new File( folderDir + "/" + this.cacheFolderName);
       if (!folder.exists()) {
           boolean result = folder.mkdirs();
-          if (result) Log.d(TAG, "wrote: created folder " + folder.getPath());
-          else Log.d(TAG, "Not possible to create folder"); // TODO: Manage this error better
+          if (result) {
+            Log.d(TAG, "wrote: created folder " + folder.getPath());
+          } else {
+            Log.d(TAG, "Not possible to create folder");
+            throw new Exception("Failed to create the cache directory");
+          }
       }
-      return folderDir + "/" + this.cacheFolderName + "/" + name + UUID.randomUUID() + ".jpg";
+      return folderDir + "/" + this.cacheFolderName + "/" + name + UUID.randomUUID() + ".png";
     }
 
     /**
     Saves a file to a folder
     */
-    private String saveToDirectory(Mat doc, String fileName) {
-        Mat endDoc = new Mat(Double.valueOf(doc.size().width).intValue(), Double.valueOf(doc.size().height).intValue(),
-                CvType.CV_8UC4);
-
+    private boolean saveToDirectory(Mat doc, String fileName) {
+        Mat endDoc = new Mat(doc.size(), CvType.CV_8UC4);
+        doc.copyTo(endDoc);
         Core.flip(doc.t(), endDoc, 1);
-
-        Imgcodecs.imwrite(fileName, endDoc);
+        ArrayList<Integer> parameters = new ArrayList();
+        parameters.add(Imgcodecs.CV_IMWRITE_JPEG_QUALITY);
+        parameters.add((int)(this.capturedQuality * 100));
+        MatOfInt par = new MatOfInt();
+        par.fromList(parameters);
+        boolean success = Imgcodecs.imwrite(fileName, endDoc, par);
 
         endDoc.release();
 
-        return fileName;
+        return success;
     }
 
 }

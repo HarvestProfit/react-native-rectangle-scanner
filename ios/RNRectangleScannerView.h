@@ -15,10 +15,10 @@
 @property (nonatomic, copy) RCTBubblingEventBlock onTorchChanged;
 @property (nonatomic, copy) RCTBubblingEventBlock onPictureTaken;
 @property (nonatomic, copy) RCTBubblingEventBlock onPictureProcessed;
+@property (nonatomic, copy) RCTBubblingEventBlock onErrorProcessingImage;
 @property (nonatomic, copy) RCTBubblingEventBlock onRectangleDetected;
 
 @property (nonatomic, assign) float capturedQuality;
-@property (nonatomic, assign) NSString *cacheFolderName;
 
 - (void) capture;
 - (void) startCamera;

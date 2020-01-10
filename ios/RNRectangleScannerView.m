@@ -83,15 +83,18 @@
   }
 }
 
+- (void)onErrorOfImageProcessor:(NSDictionary*) errorBody {
+  if (self.onErrorProcessingImage) {
+    self.onErrorProcessingImage(errorBody);
+  }
+}
+
 /*!
 After capture, the image is stored and sent to the event handler
 */
 -(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature {
   NSString *dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
   NSString *storageFolder = @"RNRectangleScanner";
-  if (self.cacheFolderName) {
-    storageFolder = self.cacheFolderName;
-  }
 
   dir = [dir stringByAppendingPathComponent:storageFolder];
 
@@ -100,11 +103,17 @@ After capture, the image is stored and sent to the event handler
   if(![fileManager createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:&error]) {
     // An error has occurred, do something to handle it
     NSLog(@"Failed to create directory \"%@\". Error: %@", dir, error);
+    [self onErrorOfImageProcessor:@{@"message": @"Failed to create the cache directory"}];
+    return;
   }
 
+  NSString *croppedFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"C%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
+  NSString *initialFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"O%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
+  bool hasCroppedImage = (croppedImage != nil);
+  if (!hasCroppedImage) {
+    croppedFilePath = initialFilePath;
+  }
 
-  NSString *croppedFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"cropped_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
-  NSString *initialFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"initial_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
 
   if (self.onPictureTaken) {
     self.onPictureTaken(@{
@@ -118,10 +127,25 @@ After capture, the image is stored and sent to the event handler
     quality = self.capturedQuality;
   }
   @autoreleasepool {
-    NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, quality);
+    if (hasCroppedImage) {
+      NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, quality);
+      if (![croppedImageData writeToFile:croppedFilePath atomically:YES]) {
+        NSMutableDictionary *errorBody = [[NSMutableDictionary alloc] init];
+        [errorBody setValue:@"Failed to write cropped image to cache" forKey:@"message"];
+        [errorBody setValue:croppedFilePath forKey:@"filePath"];
+        [self onErrorOfImageProcessor:errorBody];
+        return;
+      }
+    }
+
     NSData *initialImageData = UIImageJPEGRepresentation(initialImage, quality);
-    [croppedImageData writeToFile:croppedFilePath atomically:YES];
-    [initialImageData writeToFile:initialFilePath atomically:YES];
+    if (![initialImageData writeToFile:initialFilePath atomically:YES]) {
+      NSMutableDictionary *errorBody = [[NSMutableDictionary alloc] init];
+      [errorBody setValue:@"Failed to write original image to cache" forKey:@"message"];
+      [errorBody setValue:initialFilePath forKey:@"filePath"];
+      [self onErrorOfImageProcessor:errorBody];
+      return;
+    }
 
     if (self.onPictureProcessed) {
       self.onPictureProcessed(@{
