@@ -18,7 +18,7 @@ class Scanner extends React.Component {
     onDeviceSetup: PropTypes.func,
     onRectangleDetected: PropTypes.func,
     onTorchChanged: PropTypes.func,
-    cacheFolderName: PropTypes.string,
+    onErrorProcessingImage: PropTypes.func,
   };
 
   static defaultProps = {
@@ -27,16 +27,12 @@ class Scanner extends React.Component {
     onPictureProcessed: null,
     onDeviceSetup: null,
     onRectangleDetected: null,
+    onErrorProcessingImage: null,
     capturedQuality: 0.5,
-    cacheFolderName: 'RNRectangleScanner',
   }
 
   constructor(props) {
     super(props);
-
-    this.cameraDidRespond = false;
-
-    this.setupTimeout = null;
   }
 
   componentDidMount() {
@@ -49,7 +45,6 @@ class Scanner extends React.Component {
 
   componentWillUnmount() {
     if (CameraManager.cleanup) CameraManager.cleanup();
-    clearTimeout(this.setupTimeout);
   }
 
   getImageQuality() {
@@ -69,6 +64,11 @@ class Scanner extends React.Component {
     return this.props.onPictureProcessed(event.nativeEvent);
   }
 
+  sendOnErrorProcessingImage = (event) => {
+    if (!this.props.onErrorProcessingImage) return null;
+    return this.props.onErrorProcessingImage(event.nativeEvent);
+  }
+
   sendOnRectangleDetectedEvent = (event) => {
     if (!this.props.onRectangleDetected) return null;
     let detectionPayload = event.nativeEvent;
@@ -82,8 +82,6 @@ class Scanner extends React.Component {
   }
 
   sendOnDeviceSetupEvent = (event) => {
-    this.cameraDidRespond = true;
-    clearTimeout(this.setupTimeout);
     if (!this.props.onDeviceSetup) return null;
     return this.props.onDeviceSetup(event.nativeEvent);
   }
@@ -119,22 +117,11 @@ class Scanner extends React.Component {
         },
       });
     }
-    clearTimeout(this.setupTimeout);
   }
 
   start = () => {
     setTimeout(() => {
       CameraManager.start();
-      this.setupTimeout = setTimeout(() => {
-        if (!this.cameraDidRespond) {
-          this.sendOnDeviceSetupEvent({
-            nativeEvent: {
-              hasCamera: false,
-              permissionToUseCamera: false,
-            },
-          });
-        }
-      }, 5000);
     }, 10);
   }
 
@@ -150,6 +137,7 @@ class Scanner extends React.Component {
         {...this.props}
         onPictureTaken={this.sendOnPictureTakenEvent}
         onPictureProcessed={this.sendOnPictureProcessedEvent}
+        onErrorProcessingImage={this.sendOnErrorProcessingImage}
         onRectangleDetected={this.sendOnRectangleDetectedEvent}
         onDeviceSetup={this.sendOnDeviceSetupEvent}
         onTorchChanged={this.sendOnTorchChangedEvent}
