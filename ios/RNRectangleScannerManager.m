@@ -41,6 +41,11 @@ RCT_EXPORT_VIEW_PROPERTY(capturedQuality, float)
  */
 RCT_EXPORT_VIEW_PROPERTY(filterId, int)
 
+/*!
+ Determines what folder to store captured images under in the cache directory
+ */
+RCT_EXPORT_VIEW_PROPERTY(cacheFolderName, NSstring)
+
 
 // MARK: Life cycle Actions
 /*!

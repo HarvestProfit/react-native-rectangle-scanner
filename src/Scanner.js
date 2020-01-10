@@ -10,7 +10,7 @@ import {
 const RNRectangleScanner = requireNativeComponent('RNRectangleScanner');
 const CameraManager = NativeModules.RNRectangleScannerManager || {};
 
-class PdfScanner extends React.Component {
+class Scanner extends React.Component {
   static propTypes = {
     onPictureTaken: PropTypes.func,
     onPictureProcessed: PropTypes.func,
@@ -157,4 +157,4 @@ class PdfScanner extends React.Component {
   }
 }
 
-export default PdfScanner;
+export default Scanner;

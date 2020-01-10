@@ -26,6 +26,7 @@ import java.io.File;
   for deterining how to cache the output images.
 */
 public class RNRectangleScannerView extends RectangleDetectionController {
+    private String cacheFolderName = 'RNRectangleScanner';
 
     //================================================================================
     // Setup
@@ -62,6 +63,14 @@ public class RNRectangleScannerView extends RectangleDetectionController {
     private void pictureWasProcessed(WritableMap pictureDetails) {
       Log.d(TAG, "picture processed");
       this.parentView.pictureWasProcessed(pictureDetails);
+    }
+
+    /**
+    Sets the folder under the cache directory that the captured images
+    will be stored under
+    */
+    public void setCacheFolderName(String cacheFolderName) {
+      this.cacheFolderName = cacheFolderName;
     }
 
     /**
@@ -118,9 +127,8 @@ public class RNRectangleScannerView extends RectangleDetectionController {
     }
 
     private String generateStoredFileName(String name) {
-      String folderName = "documents";
       String folderDir = this.mContext.getCacheDir().toString();
-      File folder = new File( folderDir + "/" + folderName);
+      File folder = new File( folderDir + "/" + this.cacheFolderName);
       if (!folder.exists()) {
           boolean result = folder.mkdirs();
           if (result) Log.d(TAG, "wrote: created folder " + folder.getPath());

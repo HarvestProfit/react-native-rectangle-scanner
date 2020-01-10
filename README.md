@@ -98,18 +98,19 @@ Above is a very barebones version of the scanner. Check out a full example in [e
 | filterId                    |   Both   | `none`  | `integer` | The id of the filter to use. [See More](#filters)                  |
 | enableTorch                 |   Both   | `false` |  `bool`   | If the flashlight should be turned on                      |
 | capturedQuality             |   iOS    |  `0.5`  |  `float`  | The jpeg quality of the output images                      |
+| cacheFolderName             |   Both    |  `RNRectangleScanner`  |  `string`  | The folder name in the app's cache directory to store the images. You can get this by importing the `CACHE_FOLDER_NAME` constant.                      |
 | onTorchChanged              |   Both   | `null`  |  `func`   | Called when the system changes the flash state |
 | onRectangleDetected         |   Both   | `null`  |  `func`   | Called when the system detects a rectangle on the image, sends the coordinates  |
 | onPictureTaken              |   Both   | `null`  |  `func`   | Called after an image is captured. It hasn't been cached yet but it will send you the URIs of where it will store it  |
 | onPictureProcessed          |   Both   | `null`  |  `func`   | Called after an image was captured and cached. It sends the URIs of where it stored the images.  |
-| styles                      |   Both   | `null`  |  `object` | Styles the camera view (works best on fullscreen/flex: 1). | 
+| styles                      |   Both   | `null`  |  `object` | Styles the camera view (works best on fullscreen/flex: 1). |
 
 
 ### Torch
 When changing the `enableTorch` property, the system will call the `onTorchChanged({enabled})` callback as well with the new state. This allows you to keep your component state in sync. Natively the torch will get turned off when the component cleans up or after an image is captured. This allows you to update the state.
 
 ### Rectangle Detection
-Rectangle detection does NOT show up on the UI automatically. You must take the coordinates from the `onRectangleDetected({detectedRectangle})` callback and render a view that displays a rectangle over the camera view. This can be done easily with a simple SVG by importing `RectangleOverlay` from this package and feeding it the detected rectangle object. 
+Rectangle detection does NOT show up on the UI automatically. You must take the coordinates from the `onRectangleDetected({detectedRectangle})` callback and render a view that displays a rectangle over the camera view. This can be done easily with a simple SVG by importing `RectangleOverlay` from this package and feeding it the detected rectangle object.
 
 Why not just handle in natively? Because it allows much more customization of the rectangle overlay. For example, you could black out the entire image, except where the detected rectangle is.  You could make an awesome component that also detects the confidence of the detected rectangle and do **auto capturing**.
 
@@ -122,6 +123,8 @@ The picture will then start to be processed and cached. Once done, it will call 
 
 NOTE: There is no UI changes when you capture an image. No screen flash, only a camera sound. This is meant so you can design how you want. *The easiest way is to just use an animated view to flash a white screen.*
 
+NOTE: captured images are stored in the app's cache directory under the `CACHE_FOLDER_NAME`. This allows you to clear the cached images when you are done. (This is advised although these may get deleted by the system.)
+
 ### Filters
 Instead of allowing you to customize the contrast, saturation, etc of the image, I prebuilt the filters. This is because the filter controls are massively different between platforms and changing those values results in much different image outputs. Below are the avilable filters. Honestly, the color controls where pretty bad on android, so the best ones for android are probably just using the Color and Black & White instead of showing all 4 (they are only slightly better than Greyscale and the original photo).
 
@@ -131,4 +134,3 @@ Instead of allowing you to customize the contrast, saturation, etc of the image,
 | 2  | Black & White |         | Optimized for legibility without color | ![Color jpeg](images/black-and-white.jpeg) |
 | 3  | Greyscale     |         | A black & white version of the image   | ![Color jpeg](images/greyscale.jpeg)       |
 | 4  | Photo         | YES     | Just the photo                         | ![Color jpeg](images/photo.jpeg)           |
-
