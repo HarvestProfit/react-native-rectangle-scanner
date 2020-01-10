@@ -9,3 +9,5 @@ export {
   Filters,
   FlashAnimation,
 };
+
+export const CACHE_FOLDER_NAME = 'RNRectangleScanner';

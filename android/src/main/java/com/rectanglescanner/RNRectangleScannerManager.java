@@ -48,6 +48,11 @@ public class RNRectangleScannerManager extends ViewGroupManager<MainView> {
         view.setFilterId(filterId);
     }
 
+    @ReactProp(name = "cacheFolderName", defaultString = "RNRectangleScanner")
+    public void setCacheFolderName(MainView view, String cacheFolderName) {
+        view.setCacheFolderName(cacheFolderName);
+    }
+
     // Life cycle Events
     @Override
     public @Nullable Map getExportedCustomDirectEventTypeConstants() {

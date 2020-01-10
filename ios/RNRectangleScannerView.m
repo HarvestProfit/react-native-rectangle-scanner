@@ -87,7 +87,21 @@
 After capture, the image is stored and sent to the event handler
 */
 -(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature {
-  NSString *dir = NSTemporaryDirectory();
+  NSString *dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+  NSString *storageFolder = @"RNRectangleScanner";
+  if (self.cacheFolderName) {
+    storageFolder = self.cacheFolderName;
+  }
+
+  dir = [dir stringByAppendingPathComponent:storageFolder];
+
+  NSFileManager *fileManager= [NSFileManager defaultManager];
+  NSError *error = nil;
+  if(![fileManager createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:&error]) {
+    // An error has occurred, do something to handle it
+    NSLog(@"Failed to create directory \"%@\". Error: %@", dir, error);
+  }
+
 
   NSString *croppedFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"cropped_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
   NSString *initialFilePath = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"initial_img_%i.jpeg",(int)[NSDate date].timeIntervalSince1970]];
@@ -99,7 +113,10 @@ After capture, the image is stored and sent to the event handler
     });
   }
 
-  float quality = self.capturedQuality || 0.5;
+  float quality = 0.5;
+  if (self.capturedQuality) {
+    quality = self.capturedQuality;
+  }
   @autoreleasepool {
     NSData *croppedImageData = UIImageJPEGRepresentation(croppedImage, quality);
     NSData *initialImageData = UIImageJPEGRepresentation(initialImage, quality);

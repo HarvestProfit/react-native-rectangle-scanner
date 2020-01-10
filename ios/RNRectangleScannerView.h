@@ -18,6 +18,7 @@
 @property (nonatomic, copy) RCTBubblingEventBlock onRectangleDetected;
 
 @property (nonatomic, assign) float capturedQuality;
+@property (nonatomic, assign) NSString *cacheFolderName;
 
 - (void) capture;
 - (void) startCamera;
