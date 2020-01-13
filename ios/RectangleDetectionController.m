@@ -153,11 +153,19 @@ After an image is captured, this fuction is called and handles cropping the imag
       self->_borderDetectLastRectangleFeature)
   {
     CIImage *croppedImage = [self correctPerspectiveForImage:capturedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
-    UIImage *image = [UIImage imageWithCIImage:croppedImage scale: 1.0 orientation:UIImageOrientationRight];
-    UIImage *initialImage = [UIImage imageWithCIImage:capturedImage scale: 1.0 orientation:UIImageOrientationRight];
+
+    CIContext *context = [CIContext contextWithOptions:nil];
+    CGImageRef croppedref = [context createCGImage:croppedImage fromRect:croppedImage.extent];
+    UIImage *image = [UIImage imageWithCGImage:croppedref scale: 1.0 orientation:UIImageOrientationRight];
+
+    CGImageRef capturedref = [context createCGImage:capturedImage fromRect:capturedImage.extent];
+    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
+
     [self onProcessedCapturedImage:image initialImage: initialImage lastRectangleFeature: self->_borderDetectLastRectangleFeature];
   } else {
-    UIImage *initialImage = [UIImage imageWithCIImage:capturedImage scale: 1.0 orientation:UIImageOrientationRight];
+    CIContext *context = [CIContext contextWithOptions:nil];
+    CGImageRef capturedref = [context createCGImage:capturedImage fromRect:capturedImage.extent];
+    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
     [self onProcessedCapturedImage:nil initialImage: initialImage lastRectangleFeature: nil];
   }
 }
