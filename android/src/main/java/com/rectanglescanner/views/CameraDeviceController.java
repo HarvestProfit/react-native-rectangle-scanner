@@ -232,36 +232,25 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         return cameraId;
     }
 
-    private Camera.Size getMaxPreviewResolution() {
-        int maxWidth = 0;
-        Camera.Size curRes = null;
-
-        mCamera.lock();
-
-        for (Camera.Size r : getResolutionList()) {
-            if (r.width > maxWidth) {
-                Log.d(TAG, "supported preview resolution: " + r.width + "x" + r.height);
-                maxWidth = r.width;
-                curRes = r;
-            }
-        }
-
-        return curRes;
-    }
-
-    private Camera.Size getMaxPictureResolution(float previewRatio) {
+    /**
+    Given a list of resolution sizes and a ratio to fit to, it will find the highest resolution
+    that fits the ratio the best.
+    */
+    private Camera.Size getOptimalResolution(float ratioToFitTo, List<Camera.Size> resolutionList) {
         int maxPixels = 0;
         int ratioMaxPixels = 0;
+        double bestRatioDifference = 5;
         Camera.Size currentMaxRes = null;
         Camera.Size ratioCurrentMaxRes = null;
-        for (Camera.Size r : getPictureResolutionList()) {
+        for (Camera.Size r : resolutionList) {
             float pictureRatio = (float) r.width / r.height;
-            Log.d(TAG, "supported picture resolution: " + r.width + "x" + r.height + " ratio: " + pictureRatio);
+            Log.d(TAG, "supported resolution: " + r.width + "x" + r.height + " ratio: " + pictureRatio + " ratioToFitTo: " + ratioToFitTo);
             int resolutionPixels = r.width * r.height;
-
-            if (resolutionPixels > ratioMaxPixels && pictureRatio == previewRatio) {
+            double ratioDifference = Math.abs(ratioToFitTo - pictureRatio);
+            if (resolutionPixels > ratioMaxPixels && ratioDifference < bestRatioDifference) {
                 ratioMaxPixels = resolutionPixels;
                 ratioCurrentMaxRes = r;
+                bestRatioDifference = ratioDifference;
             }
 
             if (resolutionPixels > maxPixels) {
@@ -272,7 +261,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
 
         if (ratioCurrentMaxRes != null) {
 
-            Log.d(TAG, "Max supported picture resolution with preview aspect ratio: " + ratioCurrentMaxRes.width + "x"
+            Log.d(TAG, "Max supported resolution with aspect ratio: " + ratioCurrentMaxRes.width + "x"
                     + ratioCurrentMaxRes.height);
             return ratioCurrentMaxRes;
 
@@ -348,13 +337,23 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       // focus to true at the start
       mFocused = true;
 
-      Camera.Size pSize = getMaxPreviewResolution();
+      Display display = mActivity.getWindowManager().getDefaultDisplay();
+      android.graphics.Point size = new android.graphics.Point();
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+          display.getRealSize(size);
+      }
+
+      int displayWidth = Math.min(size.y, size.x);
+      int displayHeight = Math.max(size.y, size.x);
+      float displayRatio = (float) displayHeight / displayWidth;
+
+      Camera.Size pSize = getOptimalResolution(displayRatio, getResolutionList());
       param.setPreviewSize(pSize.width, pSize.height);
       param.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
       float previewRatio = (float) pSize.width / pSize.height;
       setDevicePreviewSize(previewRatio);
 
-      Camera.Size maxRes = getMaxPictureResolution(previewRatio);
+      Camera.Size maxRes = getOptimalResolution(previewRatio, getPictureResolutionList());
       if (maxRes != null) {
           param.setPictureSize(maxRes.width, maxRes.height);
           Log.d(TAG, "max supported picture resolution: " + maxRes.width + "x" + maxRes.height);
@@ -387,12 +386,27 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       float displayRatio = (float) displayHeight / displayWidth;
 
       int previewHeight = displayHeight;
-      if (displayRatio > previewRatio) {
-          previewHeight = (int) ((float) size.y / displayRatio * previewRatio);
+      int previewWidth = displayWidth;
+
+      int sizeY = size.y;
+      int sizeX = size.x;
+      if (this.lastDetectedRotation == Surface.ROTATION_90 || this.lastDetectedRotation == Surface.ROTATION_270) {
+        sizeY = size.x;
+        sizeX = size.y;
       }
 
-      double percentOfScreenSize = (double) previewHeight / displayHeight;
-      setDeviceConfigurationPreviewPercentSize(percentOfScreenSize, 1.0);
+      if (displayRatio > previewRatio) {
+          // Adjust height
+          previewHeight = (int) ((float) sizeY / displayRatio * previewRatio);
+      } else if (displayRatio < previewRatio) {
+          // Adjust Width
+          previewWidth = (int) ((float) sizeX * displayRatio / previewRatio);
+      }
+
+
+      double percentOfScreenSizeHeight = (double) previewHeight / displayHeight;
+      double percentOfScreenSizeWidth = (double) previewWidth / displayWidth;
+      setDeviceConfigurationPreviewPercentSize(percentOfScreenSizeHeight, percentOfScreenSizeWidth);
     }
 
 
