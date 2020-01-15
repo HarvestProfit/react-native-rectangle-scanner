@@ -177,6 +177,8 @@ Represents the input from the camera device
   [self _setDeviceConfigurationFlashAvailable:NO];
   [self _setDeviceConfigurationPermissionToUseCamera:NO ];
   [self _setDeviceConfigurationHasCamera:NO];
+  [_deviceConfiguration setValue: @1.0 forKey: @"previewHeightPercent"];
+  [_deviceConfiguration setValue: @1.0 forKey: @"previewWidthPercent"];
 }
 
 /*!

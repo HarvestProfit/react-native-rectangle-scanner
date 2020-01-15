@@ -104,6 +104,19 @@ Above is a very barebones version of the scanner. Check out a full example in [e
 | onPictureTaken              | `null`  |  `func`   | Called after an image is captured. It hasn't been cached yet but it will send you the URIs of where it will store it  |
 | onPictureProcessed          | `null`  |  `func`   | Called after an image was captured and cached. It sends the URIs of where it stored the images.  |
 | styles                      | `null`  |  `object` | Styles the camera view (works best on fullscreen/flex: 1). |
+| onDeviceSetup               | `null`  | `func`    | Called after the system sets up the camera allowing you to configure the view for different device setups. |
+
+
+### onDeviceSetup
+This callback is really important. When you show the Scanner component, it will start setting up the camera. The `onDeviceSetup({hasCamera, permissionToUseCamera, flashIsAvailable, previewHeightPercent, previewWidthPercent})` contains all the details you need to preset the camera view.
+
+`hasCamera` will notify you if the device even has a camera. iOS simulators do not have a camera for example. This gives you the chance to hide the camera preview and show an error or something.
+
+`permissionToUseCamera` will tell you if the user has granted permission to use the camera.
+
+`flashIsAvailable` tells you if the device has a flashlight that you can use.
+
+`previewHeightPercent` and `previewWidthPercent` contain percentages of the portrait view that the preview takes up. This is important because on android devices, there are preset preview sizes that may or may not match the screen size. So you can't just show the preview at full screen or the preview will be stretched. See the example on how I handle this.
 
 
 ### Torch

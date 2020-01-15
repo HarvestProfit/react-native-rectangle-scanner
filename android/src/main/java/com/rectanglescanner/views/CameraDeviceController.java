@@ -182,6 +182,14 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     }
 
     /**
+    Sets the percent size of the camera preview
+    */
+    public void setDeviceConfigurationPreviewPercentSize(double heightPercent, double widthPercent) {
+      this.deviceConfiguration.putDouble("previewHeightPercent", heightPercent);
+      this.deviceConfiguration.putDouble("previewWidthPercent", widthPercent);
+    }
+
+    /**
      Sets the inital device configuration
      */
     public void resetDeviceConfiguration()
@@ -190,6 +198,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       setDeviceConfigurationFlashAvailable(false);
       setDeviceConfigurationPermissionToUseCamera(false);
       setDeviceConfigurationHasCamera(false);
+      setDeviceConfigurationPreviewPercentSize(1.0, 1.0);
     }
 
     /**
@@ -298,7 +307,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
 
 
 
-    /*!
+    /**
      Sets up the hardware and capture session asking for permission to use the camera if needed.
      */
     public void setupCamera() {
@@ -343,26 +352,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       param.setPreviewSize(pSize.width, pSize.height);
       param.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
       float previewRatio = (float) pSize.width / pSize.height;
-
-      Display display = mActivity.getWindowManager().getDefaultDisplay();
-      android.graphics.Point size = new android.graphics.Point();
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-          display.getRealSize(size);
-      }
-
-      int displayWidth = Math.min(size.y, size.x);
-      int displayHeight = Math.max(size.y, size.x);
-
-      float displayRatio = (float) displayHeight / displayWidth;
-
-      int previewHeight;
-
-      if (displayRatio > previewRatio) {
-          ViewGroup.LayoutParams surfaceParams = mSurfaceView.getLayoutParams();
-          previewHeight = (int) ((float) size.y / displayRatio * previewRatio);
-          surfaceParams.height = previewHeight;
-          mSurfaceView.setLayoutParams(surfaceParams);
-      }
+      setDevicePreviewSize(previewRatio);
 
       Camera.Size maxRes = getMaxPictureResolution(previewRatio);
       if (maxRes != null) {
@@ -379,8 +369,34 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       }
     }
 
+    /**
+    Sets the surface preview ratio size. Some android devices will have a different
+    sized preview than their full screen size so this allows for some size adjusting
+    so the preview's aspect ratio is intact
+    */
+    public void setDevicePreviewSize(float previewRatio) {
+      Display display = mActivity.getWindowManager().getDefaultDisplay();
+      android.graphics.Point size = new android.graphics.Point();
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+          display.getRealSize(size);
+      }
 
-    /*!
+      int displayWidth = Math.min(size.y, size.x);
+      int displayHeight = Math.max(size.y, size.x);
+
+      float displayRatio = (float) displayHeight / displayWidth;
+
+      int previewHeight = displayHeight;
+      if (displayRatio > previewRatio) {
+          previewHeight = (int) ((float) size.y / displayRatio * previewRatio);
+      }
+
+      double percentOfScreenSize = (double) previewHeight / displayHeight;
+      setDeviceConfigurationPreviewPercentSize(percentOfScreenSize, 1.0);
+    }
+
+
+    /**
      Finds a physical camera, configures it, and sets the captureDevice property to it
      @return boolean if the camera was found and opened correctly
      */
@@ -446,7 +462,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         this.safeToTakePicture = true;
     }
 
-    /*!
+    /**
      Responds to the capture image call. It will apply a few filters and call handleCapturedImage which can be overrided for more processing
      */
     @Override
@@ -495,7 +511,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         cleanupCamera();
     }
 
-    /*!
+    /**
      Processes the image output from the capture session.
      */
     @Override

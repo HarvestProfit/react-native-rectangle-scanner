@@ -1,9 +1,9 @@
 import { PropTypes } from 'prop-types';
 import React from 'react';
-import { Platform, Dimensions, View } from 'react-native';
+import { Dimensions, View } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
 
-const RectangleOverlay = ({ detectedRectangle, backgroundColor, borderColor, borderWidth }) => {
+const RectangleOverlay = ({ previewRatio, detectedRectangle, backgroundColor, borderColor, borderWidth }) => {
   if (!detectedRectangle) return null;
   const {
     topRight,
@@ -22,8 +22,8 @@ const RectangleOverlay = ({ detectedRectangle, backgroundColor, borderColor, bor
   commands.push('Z');
   const d = commands.join(' ');
   return (
-    <View style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: 0, backgroundColor: 'rgba(0,0,0,0)', flex: 1 }}>
-      <Svg height={deviceWindow.height} width={deviceWindow.width} viewBox={`0 0 ${dimensions.width} ${dimensions.height + (Platform.OS === 'android' ? 10 : 0)}`}>
+    <View style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: 0, backgroundColor: 'rgba(0,0,0,0)' }}>
+      <Svg height={deviceWindow.height * previewRatio.height} width={deviceWindow.width * previewRatio.width} viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
         <Path
           d={d}
           style={{ fill: backgroundColor, stroke: borderColor, strokeWidth: borderWidth, strokeLinejoin: 'round', strokeLinecap: 'round' }}
@@ -41,6 +41,10 @@ RectangleOverlay.propTypes = {
     bottomLeft: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
     dimensions: PropTypes.shape({ height: PropTypes.number, width: PropTypes.number }),
   }), PropTypes.bool]),
+  previewRatio: PropTypes.shape({
+    height: PropTypes.number,
+    width: PropTypes.number,
+  }),
   backgroundColor: PropTypes.string,
   borderColor: PropTypes.string,
   borderWidth: PropTypes.number,
@@ -51,6 +55,10 @@ RectangleOverlay.defaultProps = {
   backgroundColor: 'rgba(255,203,6, 0.3)',
   borderColor: 'rgb(255,203,6)',
   borderWidth: 5,
+  previewRatio: {
+    height: 1,
+    width: 1,
+  },
 
 };
 

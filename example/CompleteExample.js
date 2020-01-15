@@ -168,6 +168,8 @@ export default class DocumentScanner extends PureComponent {
         hasCamera: false,
         permissionToUseCamera: false,
         flashIsAvailable: false,
+        previewHeightPercent: 1,
+        previewWidthPercent: 1,
       },
     };
 
@@ -210,9 +212,11 @@ export default class DocumentScanner extends PureComponent {
 
   // Called after the device gets setup. This lets you know some platform specifics
   // like if the device has a camera or flash, or even if you have permission to use the
-  // camera.
+  // camera. It also includes the aspect ratio correction of the preview
   onDeviceSetup = (deviceDetails) => {
-    const { hasCamera, permissionToUseCamera, flashIsAvailable } = deviceDetails;
+    const {
+      hasCamera, permissionToUseCamera, flashIsAvailable, previewHeightPercent, previewWidthPercent,
+    } = deviceDetails;
     this.setState({
       loadingCamera: false,
       device: {
@@ -220,6 +224,8 @@ export default class DocumentScanner extends PureComponent {
         hasCamera,
         permissionToUseCamera,
         flashIsAvailable,
+        previewHeightPercent: previewHeightPercent || 1,
+        previewWidthPercent: previewWidthPercent || 1,
       },
     });
   }
@@ -246,6 +252,31 @@ export default class DocumentScanner extends PureComponent {
       }
     }
     return 'Failed to set up the camera.';
+  }
+
+  // On some android devices, the aspect ratio of the preview is different than
+  // the screen size. This leads to distorted camera previews. This allows for correcting that.
+  getPreviewSize() {
+    const dimensions = Dimensions.get('window');
+    const heightMargin = (1 - this.state.device.previewHeightPercent) * dimensions.height / 2;
+    const widthMargin = (1 - this.state.device.previewWidthPercent) * dimensions.width / 2;
+    if (dimensions.height > dimensions.width) {
+      // Portrait
+      return {
+        height: this.state.device.previewHeightPercent,
+        width: this.state.device.previewWidthPercent,
+        marginTop: heightMargin,
+        marginLeft: widthMargin,
+      };
+    }
+
+    // Landscape
+    return {
+      width: this.state.device.previewHeightPercent,
+      height: this.state.device.previewWidthPercent,
+      marginTop: widthMargin,
+      marginLeft: heightMargin,
+    };
   }
 
   // Capture the current frame/rectangle. Triggers the flash animation and shows a
@@ -512,16 +543,18 @@ export default class DocumentScanner extends PureComponent {
   // letting the user know why camera use is not allowed
   renderCameraView() {
     if (this.state.showScannerView) {
+      const previewSize = this.getPreviewSize();
       let rectangleOverlay = null;
       if (!this.state.loadingCamera && !this.state.processingImage) {
         rectangleOverlay = (
           <RectangleOverlay
             detectedRectangle={this.state.detectedRectangle}
+            previewRatio={previewSize}
           />
         );
       }
       return (
-        <>
+        <View style={{ backgroundColor: 'rgba(0, 0, 0, 0)', position: 'relative', marginTop: previewSize.marginTop, marginLeft: previewSize.marginLeft, height: `${previewSize.height * 100}%`, width: `${previewSize.width * 100}%` }}>
           <Scanner
             onPictureTaken={this.onPictureTaken}
             onPictureProcessed={this.onPictureProcessed}
@@ -537,7 +570,7 @@ export default class DocumentScanner extends PureComponent {
           {rectangleOverlay}
           <Animated.View style={{ ...styles.overlay, backgroundColor: 'white', opacity: this.state.overlayFlashOpacity }} />
           {this.renderCameraOverlay()}
-        </>
+        </View>
       );
     }
 
