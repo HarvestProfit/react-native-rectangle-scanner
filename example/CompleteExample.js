@@ -258,6 +258,7 @@ export default class DocumentScanner extends PureComponent {
   // the screen size. This leads to distorted camera previews. This allows for correcting that.
   getPreviewSize() {
     const dimensions = Dimensions.get('window');
+    // We use set margin amounts because for some reasons the percentage values don't align the camera preview in the center correctly.
     const heightMargin = (1 - this.state.device.previewHeightPercent) * dimensions.height / 2;
     const widthMargin = (1 - this.state.device.previewWidthPercent) * dimensions.width / 2;
     if (dimensions.height > dimensions.width) {
@@ -553,6 +554,8 @@ export default class DocumentScanner extends PureComponent {
           />
         );
       }
+      
+      // NOTE: I set the background color on here because for some reason the view doesn't line up correctly otherwise. It's a weird quirk I noticed.
       return (
         <View style={{ backgroundColor: 'rgba(0, 0, 0, 0)', position: 'relative', marginTop: previewSize.marginTop, marginLeft: previewSize.marginLeft, height: `${previewSize.height * 100}%`, width: `${previewSize.width * 100}%` }}>
           <Scanner
