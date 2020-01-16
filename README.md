@@ -98,7 +98,6 @@ Above is a very barebones version of the scanner. Check out a full example in [e
 | filterId                    | `none`  | `integer` | The id of the filter to use. [See More](#filters)                  |
 | enableTorch                 | `false` |  `bool`   | If the flashlight should be turned on                      |
 | capturedQuality             |  `0.5`  |  `float`  | The jpeg quality of the output images                      |
-| cacheFolderName             |  `RNRectangleScanner`  |  `string`  | The folder name in the app's cache directory to store the images. You can get this by importing the `CACHE_FOLDER_NAME` constant.                      |
 | onTorchChanged              | `null`  |  `func`   | Called when the system changes the flash state |
 | onRectangleDetected         | `null`  |  `func`   | Called when the system detects a rectangle on the image, sends the coordinates  |
 | onPictureTaken              | `null`  |  `func`   | Called after an image is captured. It hasn't been cached yet but it will send you the URIs of where it will store it  |
