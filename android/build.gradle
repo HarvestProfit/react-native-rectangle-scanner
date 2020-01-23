@@ -30,11 +30,11 @@ android {
 
 dependencies {
     implementation project(':openCVLibrary310')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:26.1.0' // Looks pretty old, should be able to use androidx
     implementation 'com.facebook.react:react-native:0.19.+'
-    implementation 'com.google.zxing:core:3.0.1'
+    implementation 'com.google.zxing:core:3.0.1' // barcode scanning
 //    implementation 'com.android.support:design:26.1.0'
-    implementation 'org.piwik.sdk:piwik-sdk:0.0.4'
-    implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
-    implementation 'us.feras.mdv:markdownview:1.1.0'
+    implementation 'org.piwik.sdk:piwik-sdk:0.0.4' // Piwik App Tracking
+    implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.5' // Image loading, caching, and displaying
+    implementation 'us.feras.mdv:markdownview:1.1.0' // Markdown previewer
 }
