@@ -241,17 +241,15 @@ Represents the input from the camera device
 
 
 /*!
- Gets a hardware camera device.  If useFrontCam is true, it will find the front camera
+ Gets a hardware camera device.
  @return A camera hardware object or nil if not found
  */
 - (AVCaptureDevice *)getCameraDevice{
-  AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera]
-                                        mediaType:AVMediaTypeVideo
-                                         position:AVCaptureDevicePositionBack];
-  NSArray *devices = [captureDeviceDiscoverySession devices];
-  for (AVCaptureDevice *possibleDevice in devices) {
-    if ([possibleDevice position] != AVCaptureDevicePositionFront) return possibleDevice;
-  }
+  AVCaptureDevice* possibleDevice;
+
+  possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+  if (possibleDevice) return possibleDevice;
+
   return nil;
 }
 
