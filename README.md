@@ -18,7 +18,7 @@ Live photo rectangle detection library useful for scanning documents. On capture
 Install the library using either yarn:
 
 ```sh
-yarn add react-native-rectangle-scanner`
+yarn add react-native-rectangle-scanner
 ```
 
 or npm:
@@ -27,7 +27,9 @@ or npm:
 npm install react-native-rectangle-scanner --save
 ```
 
-This package can be ran on a simulator, android simulators work a bit better, iOS simulators will simply return `false` for `hasCamera` on device setup.
+you will also need to install `react-native-svg`, which is used for drawing the detected rectangle over the camera view.
+
+This package can be ran on a simulator, android simulators work a bit better, iOS simulators will simply return `false` for `hasCamera` in the onDeviceSetup callback.
 
 ### iOS Only
 
