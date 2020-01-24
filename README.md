@@ -130,7 +130,10 @@ When changing the `enableTorch` property, the system will call the `onTorchChang
 ### Rectangle Detection
 Rectangle detection does NOT show up on the UI automatically. You must take the coordinates from the `onRectangleDetected({detectedRectangle})` callback and render a view that displays a rectangle over the camera view. This can be done easily with a simple SVG by importing `RectangleOverlay` from this package and feeding it the detected rectangle object.
 
-Why not just handle in natively? Because it allows much more customization of the rectangle overlay. For example, you could black out the entire image, except where the detected rectangle is.  You could make an awesome component that also detects the confidence of the detected rectangle and do **auto capturing**.
+Why not just handle in natively? Because it allows much more customization of the rectangle overlay. For example, you could black out the entire image, except where the detected rectangle is. This also lets you control auto capture and UI changes on detection in javascript.
+
+#### Auto Capture
+Auto capturing is handled entirely in the `RectangleOverlay` component by simply setting its `allowDetection={true}` and `onDetectedCapture={this.captureImage}` props. See that component for documentation.
 
 ### Capturing An Image
 To capture an image, you must create a ref to the component. This ref will allow you to call `capture()` which will trigger the capture asynchronously.
@@ -139,7 +142,7 @@ Once triggered, it will take the current detected rectangle and crop, apply filt
 
 The picture will then start to be processed and cached. Once done, it will call `onPictureProcessed({croppedImage, initialImage})` containing the URIs of the images. This is called after the image is cached which means you can load the images into the UI.
 
-NOTE: There is no UI changes when you capture an image. No screen flash, only a camera sound. This is meant so you can design how you want. *The easiest way is to just use an animated view to flash a white screen.*
+NOTE: There is no UI changes when you capture an image. No screen flash, only a camera sound. This is meant so you can design how you want. *The easiest way is to just use an animated view to flash a white screen.* You can import the `FlashAnimation` component to do this if you want.
 
 **NOTE**: captured images are stored in the app's cache directory under the `CACHE_FOLDER_NAME`. This allows you to clear the cached images when you are done. (This is advised although these may get deleted by the system.)
 

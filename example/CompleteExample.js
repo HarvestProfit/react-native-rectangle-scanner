@@ -551,10 +551,19 @@ export default class DocumentScanner extends PureComponent {
           <RectangleOverlay
             detectedRectangle={this.state.detectedRectangle}
             previewRatio={previewSize}
+            backgroundColor="rgba(255,181,6, 0.2)"
+            borderColor="rgb(255,181,6)"
+            borderWidth={4}
+            // == These let you auto capture and change the overlay style on detection ==
+            // detectedBackgroundColor="rgba(255,181,6, 0.3)"
+            // detectedBorderWidth={6}
+            // detectedBorderColor="rgb(255,218,124)"
+            // onDetectedCapture={this.capture}
+            // allowDetection
           />
         );
       }
-      
+
       // NOTE: I set the background color on here because for some reason the view doesn't line up correctly otherwise. It's a weird quirk I noticed.
       return (
         <View style={{ backgroundColor: 'rgba(0, 0, 0, 0)', position: 'relative', marginTop: previewSize.marginTop, marginLeft: previewSize.marginLeft, height: `${previewSize.height * 100}%`, width: `${previewSize.width * 100}%` }}>
