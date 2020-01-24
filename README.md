@@ -37,6 +37,9 @@ CocoaPods on iOS needs this extra step:
 cd ios && pod install && cd ..
 ```
 
+
+**NOTE**: you need to be targeting iOS 10 or greater.  Your pod file may need `platform :ios, '10.0'` at the top
+
 ### Android Only
 
 If you do not have it already in your project, you must link openCV in your `settings.gradle` file
