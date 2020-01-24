@@ -26,13 +26,17 @@
 
 - (void)deviceWasSetup:(NSDictionary *)config;
 - (void)torchWasChanged:(BOOL)enableTorch;
-- (void)handleCapturedImage:(CIImage *)capturedImage;
+- (void)handleCapturedImage:(CIImage *)capturedImage orientation: (UIImageOrientation) orientation;
+- (UIImageOrientation)getOrientationForImage;
 
 @property (nonatomic, assign) BOOL hasTakenPhoto;
 @property (nonatomic, assign) BOOL forceStop;
 @property (nonatomic, assign) BOOL _isStopped;
 @property (nonatomic, assign) BOOL _cameraIsSetup;
 @property (nonatomic, assign) BOOL _isCapturing;
+@property (nonatomic, assign) UIDeviceOrientation lastDeviceOrientation;
+@property (nonatomic, assign) UIInterfaceOrientation lastInterfaceOrientation;
+
 @property (nonatomic, assign) int filterId;
 @property (nonatomic,strong) EAGLContext *context;
 @property (nonatomic, strong) CIContext *_coreImageContext;
