@@ -69,6 +69,12 @@ Represents the input from the camera device
 - (instancetype)init {
   self = [super init];
   _captureImageQueue = dispatch_queue_create("CaptureImageQueue",NULL);
+
+  // Keep track of the last device orientation for image orientation correction
+  [self deviceOrientationDidChanged];
+  [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceOrientationDidChanged) name:UIDeviceOrientationDidChangeNotification object:[UIDevice currentDevice]];
+
   return self;
 }
 
@@ -95,6 +101,21 @@ Represents the input from the camera device
 }
 
 // MARK: Setters
+
+/*!
+ Set device orientation. It ignores orientations like "faceDown" so that the last real orientation is used.
+ */
+- (void)deviceOrientationDidChanged{
+    _lastInterfaceOrientation = [UIApplication sharedApplication].statusBarOrientation;
+
+    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
+    // Ignore odd orientations, we only care about last real orientation
+    if (deviceOrientation == UIDeviceOrientationFaceUp) return;
+    if (deviceOrientation == UIDeviceOrientationFaceDown) return;
+    if (deviceOrientation == UIDeviceOrientationUnknown) return;
+    _lastDeviceOrientation = deviceOrientation;
+}
+
 /*!
  Toggles the flash on the camera device
  */
@@ -207,6 +228,41 @@ Represents the input from the camera device
 }
 
 // MARK: Getters
+
+/*!
+ @return The orientation the image should be set to
+ @note This will always return "right" if the device and the UI rotation match. Also, if the device is rotation locked, the device orientation will always be the same as the interface orientation.
+ */
+- (UIImageOrientation)getOrientationForImage
+{
+    if (_lastInterfaceOrientation == UIInterfaceOrientationPortrait) {
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeLeft) return UIImageOrientationUp;
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeRight) return UIImageOrientationDown;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortraitUpsideDown) return UIImageOrientationLeft;
+    }
+
+    if (_lastInterfaceOrientation == UIInterfaceOrientationPortraitUpsideDown) {
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeLeft) return UIImageOrientationUp;
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeRight) return UIImageOrientationDown;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortrait) return UIImageOrientationLeft;
+    }
+
+    // device landscape left == interface landscape right
+    if (_lastInterfaceOrientation == UIInterfaceOrientationLandscapeLeft) {
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeLeft) return UIImageOrientationLeft;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortrait) return UIImageOrientationUp;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortraitUpsideDown) return UIImageOrientationDown;
+    }
+
+    // device landscape right == interface landscape left
+    if (_lastInterfaceOrientation == UIInterfaceOrientationLandscapeRight) {
+        if (_lastDeviceOrientation == UIDeviceOrientationLandscapeRight) return UIImageOrientationLeft;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortrait) return UIImageOrientationDown;
+        if (_lastDeviceOrientation == UIDeviceOrientationPortraitUpsideDown) return UIImageOrientationUp;
+    }
+
+    return UIImageOrientationRight;
+}
 
 /*!
  @return The view that is used to preview the camera output
@@ -462,7 +518,6 @@ Represents the input from the camera device
   if (self.forceStop) return;
   if (self._isStopped || self._isCapturing || !CMSampleBufferIsValid(sampleBuffer)) return;
 
-
   CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
 
   CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
@@ -485,7 +540,7 @@ Represents the input from the camera device
 
 // MARK: Capture Image
 
--(void)handleCapturedImage:(CIImage *)capturedImage {
+-(void)handleCapturedImage:(CIImage *)capturedImage orientation: (UIImageOrientation) orientation {
 }
 
 /*!
@@ -503,6 +558,9 @@ Represents the input from the camera device
     CIImage *intialImage = [CIImage imageWithData:imageData];
     intialImage = [intialImage imageByApplyingOrientation:[self getCGImageOrientationForCaptureImage]];
 
+    // Lock in the final image orientation
+    UIImageOrientation imageOutputOrientation = [self getOrientationForImage];
+
     // Crop to fit screen size
     CGSize screenSize = CGSizeMake(self.bounds.size.height, self.bounds.size.width);
     CGRect cropRect = AVMakeRectWithAspectRatioInsideRect(screenSize, intialImage.extent);
@@ -514,7 +572,7 @@ Represents the input from the camera device
     dispatch_async(_captureImageQueue, ^{
       CIImage *enhancedImage = [self applyFilters:intialImage];
       self._isCapturing = NO;
-      [self handleCapturedImage:enhancedImage];
+      [self handleCapturedImage:enhancedImage orientation: imageOutputOrientation];
     });
   }
 }

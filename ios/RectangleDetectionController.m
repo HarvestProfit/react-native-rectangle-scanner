@@ -148,7 +148,7 @@
 /*!
 After an image is captured, this fuction is called and handles cropping the image
 */
--(void)handleCapturedImage:(CIImage *)capturedImage {
+-(void)handleCapturedImage:(CIImage *)capturedImage orientation: (UIImageOrientation) orientation{
   if (self.isBorderDetectionEnabled && isRectangleDetectionConfidenceHighEnough(self->_imageDedectionConfidence) &&
       self->_borderDetectLastRectangleFeature)
   {
@@ -156,16 +156,16 @@ After an image is captured, this fuction is called and handles cropping the imag
 
     CIContext *context = [CIContext contextWithOptions:nil];
     CGImageRef croppedref = [context createCGImage:croppedImage fromRect:croppedImage.extent];
-    UIImage *image = [UIImage imageWithCGImage:croppedref scale: 1.0 orientation:UIImageOrientationRight];
+    UIImage *image = [UIImage imageWithCGImage:croppedref scale: 1.0 orientation:orientation];
 
     CGImageRef capturedref = [context createCGImage:capturedImage fromRect:capturedImage.extent];
-    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
+    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:orientation];
 
     [self onProcessedCapturedImage:image initialImage: initialImage lastRectangleFeature: self->_borderDetectLastRectangleFeature];
   } else {
     CIContext *context = [CIContext contextWithOptions:nil];
     CGImageRef capturedref = [context createCGImage:capturedImage fromRect:capturedImage.extent];
-    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
+    UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:orientation];
     [self onProcessedCapturedImage:nil initialImage: initialImage lastRectangleFeature: nil];
   }
 }
@@ -192,25 +192,6 @@ After an image is captured, this fuction is called and handles cropping the imag
   rectangleCoordinates[@"inputBottomRight"] = [CIVector vectorWithCGPoint:newBottomRight];
 
   return [image imageByApplyingFilter:@"CIPerspectiveCorrection" withInputParameters:rectangleCoordinates];
-}
-
-/*!
- Gets the orientation that the image should be set to
- */
-- (int)getOrientationForImage
-{
-  switch ([UIApplication sharedApplication].statusBarOrientation) {
-  case UIDeviceOrientationPortrait:
-      return UIImageOrientationRight;
-  case UIDeviceOrientationPortraitUpsideDown:
-      return UIImageOrientationLeft;
-  case UIDeviceOrientationLandscapeLeft:
-      return UIImageOrientationUp;
-  case UIDeviceOrientationLandscapeRight:
-      return UIImageOrientationDown;
-  default:
-      return UIImageOrientationRight;
-  }
 }
 
 // MARK: Rectangle Detection

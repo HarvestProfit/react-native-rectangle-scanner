@@ -17,7 +17,7 @@
 - (void)stop;
 - (void)rectangleWasDetected:(NSDictionary *)detection;
 -(void)onProcessedCapturedImage:(UIImage *)croppedImage initialImage: (UIImage *) initialImage lastRectangleFeature: (CIRectangleFeature *) lastRectangleFeature;
-- (void)handleCapturedImage:(CIImage *)capturedImage;
+- (void)handleCapturedImage:(CIImage *)capturedImage orientation:(UIImageOrientation)orientation;
 
 @property (nonatomic,assign,getter=isBorderDetectionEnabled) BOOL enableBorderDetection;
 
