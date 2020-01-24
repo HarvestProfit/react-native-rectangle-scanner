@@ -14,8 +14,6 @@ import java.util.List;
  * Created by Jake on Jan 6, 2020.
  */
 public class RectangleScannerPackage implements ReactPackage {
-
-
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         return Arrays.<NativeModule>asList(
@@ -24,15 +22,9 @@ public class RectangleScannerPackage implements ReactPackage {
     }
 
     @Override
-    public List<Class<? extends JavaScriptModule>> createJSModules() {
-        return Collections.emptyList();
-    }
-
-    @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Arrays.<ViewManager>asList(
                 new RNRectangleScannerManager()
         );
     }
-
 }
