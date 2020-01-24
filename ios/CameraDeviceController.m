@@ -246,7 +246,6 @@ Represents the input from the camera device
  */
 - (AVCaptureDevice *)getCameraDevice{
   AVCaptureDevice* possibleDevice;
-
   possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
   if (possibleDevice) return possibleDevice;
 

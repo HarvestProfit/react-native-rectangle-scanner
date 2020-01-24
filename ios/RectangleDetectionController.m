@@ -112,7 +112,11 @@
 
     @autoreleasepool {
       @try {
-        CIImage * detectionImage = [image imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
+        // need to convert the CI image to a CG image before use, otherwise there can be some unexpected behaviour on some devices
+        CIContext *context = [CIContext contextWithOptions:nil];
+        CGImageRef cgDetectionImage = [context createCGImage:image fromRect:image.extent];
+        CIImage *detectionImage = [CIImage imageWithCGImage:cgDetectionImage];
+        detectionImage = [detectionImage imageByApplyingOrientation:kCGImagePropertyOrientationLeft];
 
         self->_borderDetectLastRectangleFeature = [self biggestRectangleInRectangles:[[self highAccuracyRectangleDetector] featuresInImage:detectionImage] image:detectionImage];
         self->_borderDetectLastRectangleBounds = detectionImage.extent;
@@ -128,6 +132,8 @@
             @"detectedRectangle": @FALSE,
           }];
         }
+
+        CGImageRelease(cgDetectionImage);
       }
       @catch (NSException * e) {
         NSLog(@"Failed to parse image: %@", e);
@@ -154,6 +160,8 @@ After an image is captured, this fuction is called and handles cropping the imag
   {
     CIImage *croppedImage = [self correctPerspectiveForImage:capturedImage withFeatures:self->_borderDetectLastRectangleFeature fromBounds:self->_borderDetectLastRectangleBounds];
 
+
+    // need to convert the CI image to a CG image before use, otherwise there can be some unexpected behaviour on some devices
     CIContext *context = [CIContext contextWithOptions:nil];
     CGImageRef croppedref = [context createCGImage:croppedImage fromRect:croppedImage.extent];
     UIImage *image = [UIImage imageWithCGImage:croppedref scale: 1.0 orientation:UIImageOrientationRight];
@@ -162,11 +170,15 @@ After an image is captured, this fuction is called and handles cropping the imag
     UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
 
     [self onProcessedCapturedImage:image initialImage: initialImage lastRectangleFeature: self->_borderDetectLastRectangleFeature];
+
+    CGImageRelease(croppedref);
+    CGImageRelease(capturedref);
   } else {
     CIContext *context = [CIContext contextWithOptions:nil];
     CGImageRef capturedref = [context createCGImage:capturedImage fromRect:capturedImage.extent];
     UIImage *initialImage = [UIImage imageWithCGImage:capturedref scale: 1.0 orientation:UIImageOrientationRight];
     [self onProcessedCapturedImage:nil initialImage: initialImage lastRectangleFeature: nil];
+    CGImageRelease(capturedref);
   }
 }
 
