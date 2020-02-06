@@ -84,15 +84,14 @@ public class ImageProcessor extends Handler {
     Process a single frame from the camera video
     */
     private void processCapturedImage(Mat picture) {
-
-        Mat img = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+        Mat capturedImage = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
         picture.release();
 
-        Log.d(TAG, "processCapturedImage - imported image " + img.size().width + "x" + img.size().height);
+        Log.d(TAG, "processCapturedImage - imported image " + capturedImage.size().width + "x" + capturedImage.size().height);
 
-        rotateImageForScreen(img);
+        rotateImageForScreen(capturedImage);
 
-        CapturedImage doc = cropImageToLatestQuadrilateral(img);
+        CapturedImage doc = cropImageToLatestQuadrilateral(capturedImage);
 
         mMainActivity.onProcessedCapturedImage(doc);
         doc.release();
@@ -123,22 +122,20 @@ public class ImageProcessor extends Handler {
     /**
     Crops the image to the latest detected rectangle and fixes perspective
     */
-    private CapturedImage cropImageToLatestQuadrilateral(Mat inputRgba) {
-        ArrayList<MatOfPoint> contours = findContours(inputRgba);
+    private CapturedImage cropImageToLatestQuadrilateral(Mat capturedImage) {
+        CapturedImage sd = new CapturedImage(capturedImage);
 
-        CapturedImage sd = new CapturedImage(inputRgba);
-
-        sd.originalSize = inputRgba.size();
+        sd.originalSize = capturedImage.size();
         sd.heightWithRatio = Double.valueOf(sd.originalSize.width).intValue();
         sd.widthWithRatio = Double.valueOf(sd.originalSize.height).intValue();
 
         Mat doc;
         if (this.lastDetectedRectangle != null) {
-            doc = fourPointTransform(inputRgba, this.lastDetectedRectangle.points);
+            doc = fourPointTransform(capturedImage, this.lastDetectedRectangle.getPointsForSize(capturedImage.size()));
             Core.flip(doc.t(), doc, 0);
         } else {
-            doc = new Mat(inputRgba.size(), CvType.CV_8UC4);
-            inputRgba.copyTo(doc);
+            doc = new Mat(capturedImage.size(), CvType.CV_8UC4);
+            capturedImage.copyTo(doc);
             Core.flip(doc.t(), doc, 0);
         }
         applyFilters(doc);

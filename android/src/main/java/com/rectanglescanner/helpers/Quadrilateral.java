@@ -8,6 +8,7 @@ import android.os.Bundle;
 
 /**
  * Created by Jake on Jan 6, 2020.
+ * Represents the detected rectangle from an image
  */
 public class Quadrilateral {
     public MatOfPoint contour;
@@ -20,6 +21,29 @@ public class Quadrilateral {
         this.sourceSize = sourceSize;
     }
 
+    /**
+    Returns the points of the rectangle scaled to the given size
+    */
+    public Point[] getPointsForSize(Size outputSize) {
+      double scale = outputSize.height / this.sourceSize.height;
+      if (scale == 1) {
+        return this.points;
+      }
+
+      Point[] scaledPoints = new Point[4];
+      for (int i = 0;i < this.points.length;i++ ) {
+        scaledPoints[i] = this.points[i].clone();
+        scaledPoints[i].x *= scale;
+        scaledPoints[i].y *= scale;
+      }
+
+      return scaledPoints;
+    }
+
+
+    /**
+    Returns the rectangle as a bundle object
+    */
     public Bundle toBundle() {
       Bundle quadMap = new Bundle();
 
