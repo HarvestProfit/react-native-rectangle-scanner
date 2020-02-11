@@ -127,7 +127,9 @@ public class ImageProcessor extends Handler {
 
         Mat doc;
         if (this.lastDetectedRectangle != null) {
-            doc = fourPointTransform(capturedImage, this.lastDetectedRectangle.getPointsForSize(capturedImage.size()));
+            Mat croppedCapturedImage = this.lastDetectedRectangle.cropImageToRectangleSize(capturedImage);
+            doc = fourPointTransform(croppedCapturedImage, this.lastDetectedRectangle.getPointsForSize(croppedCapturedImage.size()));
+            croppedCapturedImage.release();
         } else {
             doc = new Mat(capturedImage.size(), CvType.CV_8UC4);
             capturedImage.copyTo(doc);
