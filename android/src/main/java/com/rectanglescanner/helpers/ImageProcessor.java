@@ -123,22 +123,23 @@ public class ImageProcessor extends Handler {
     Crops the image to the latest detected rectangle and fixes perspective
     */
     private CapturedImage cropImageToLatestQuadrilateral(Mat capturedImage) {
+        applyFilters(capturedImage);
+
+        Mat doc;
+        if (this.lastDetectedRectangle != null) {
+            doc = fourPointTransform(capturedImage, this.lastDetectedRectangle.getPointsForSize(capturedImage.size()));
+        } else {
+            doc = new Mat(capturedImage.size(), CvType.CV_8UC4);
+            capturedImage.copyTo(doc);
+        }
+
+        Core.flip(doc.t(), doc, 0);
+        Core.flip(capturedImage.t(), capturedImage, 0);
         CapturedImage sd = new CapturedImage(capturedImage);
 
         sd.originalSize = capturedImage.size();
         sd.heightWithRatio = Double.valueOf(sd.originalSize.width).intValue();
         sd.widthWithRatio = Double.valueOf(sd.originalSize.height).intValue();
-
-        Mat doc;
-        if (this.lastDetectedRectangle != null) {
-            doc = fourPointTransform(capturedImage, this.lastDetectedRectangle.getPointsForSize(capturedImage.size()));
-            Core.flip(doc.t(), doc, 0);
-        } else {
-            doc = new Mat(capturedImage.size(), CvType.CV_8UC4);
-            capturedImage.copyTo(doc);
-            Core.flip(doc.t(), doc, 0);
-        }
-        applyFilters(doc);
         return sd.setProcessed(doc);
     }
 
