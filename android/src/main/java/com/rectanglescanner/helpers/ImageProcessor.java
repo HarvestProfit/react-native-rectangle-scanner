@@ -84,15 +84,14 @@ public class ImageProcessor extends Handler {
     Process a single frame from the camera video
     */
     private void processCapturedImage(Mat picture) {
-
-        Mat img = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+        Mat capturedImage = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
         picture.release();
 
-        Log.d(TAG, "processCapturedImage - imported image " + img.size().width + "x" + img.size().height);
+        Log.d(TAG, "processCapturedImage - imported image " + capturedImage.size().width + "x" + capturedImage.size().height);
 
-        rotateImageForScreen(img);
+        rotateImageForScreen(capturedImage);
 
-        CapturedImage doc = cropImageToLatestQuadrilateral(img);
+        CapturedImage doc = cropImageToLatestQuadrilateral(capturedImage);
 
         mMainActivity.onProcessedCapturedImage(doc);
         doc.release();
@@ -128,7 +127,9 @@ public class ImageProcessor extends Handler {
 
         Mat doc;
         if (this.lastDetectedRectangle != null) {
-            doc = fourPointTransform(capturedImage, this.lastDetectedRectangle.points);
+            Mat croppedCapturedImage = this.lastDetectedRectangle.cropImageToRectangleSize(capturedImage);
+            doc = fourPointTransform(croppedCapturedImage, this.lastDetectedRectangle.getPointsForSize(croppedCapturedImage.size()));
+            croppedCapturedImage.release();
         } else {
             doc = new Mat(capturedImage.size(), CvType.CV_8UC4);
             capturedImage.copyTo(doc);
