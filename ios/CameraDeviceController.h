@@ -38,6 +38,7 @@
 @property (nonatomic, assign) UIInterfaceOrientation lastInterfaceOrientation;
 
 @property (nonatomic, assign) int filterId;
+@property (nonatomic, assign) int cameraId;
 @property (nonatomic,strong) EAGLContext *context;
 @property (nonatomic, strong) CIContext *_coreImageContext;
 
