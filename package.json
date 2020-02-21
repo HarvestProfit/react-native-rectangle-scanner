@@ -20,7 +20,10 @@
   "keywords": [
     "react-native",
     "react-native-component",
+    "react-native-scanner",
+    "react-native-document-scanner",
     "scanner",
+    "document",
     "ios",
     "android",
     "camera"
