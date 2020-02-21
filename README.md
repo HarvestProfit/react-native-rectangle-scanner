@@ -29,8 +29,6 @@ npm install react-native-rectangle-scanner --save
 
 you will also need to install `react-native-svg`, which is used for drawing the detected rectangle over the camera view.
 
-This package can be ran on a simulator, android simulators work a bit better, iOS simulators will simply return `false` for `hasCamera` in the onDeviceSetup callback.
-
 ### iOS Only
 
 CocoaPods on iOS needs this extra step:
@@ -95,6 +93,9 @@ class DocumentScanner extends Component {
 
 Above is a very barebones version of the scanner. Check out a full example in [example folder](example/CompleteExample.js). That will handle device specific things, rendering error states, camera controls for different device sizes, mult tasking mode, etc. This is what I would consider the production ready version of using this package (it's actually very similar to the component(s) that we use in production.
 
+## Simulators
+
+This package works on a simulator. Android has a pretty cool VR world that emulates a camera. On iOS the preview will just be a black screen, and the `onDeviceSetup` property will return false for the `hasCamera` attribute so you can show a custom message like "This device doesnt have a camera".
 
 ## Properties
 
