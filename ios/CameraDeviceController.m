@@ -146,7 +146,10 @@ Represents the input from the camera device
 - (void)start
 {
     self._isStopped = NO;
-    [self.captureSession startRunning];
+    dispatch_queue_t globalQueue =  dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+    dispatch_async(globalQueue, ^{
+      [self.captureSession startRunning];  
+    });
     [self hidePreviewLayerView:NO completion:nil];
 }
 
@@ -156,7 +159,10 @@ Represents the input from the camera device
 - (void)stop
 {
     self._isStopped = YES;
-    [self.captureSession stopRunning];
+    dispatch_queue_t globalQueue =  dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+    dispatch_async(globalQueue, ^{
+      [self.captureSession stopRunning];  
+    });
     [self hidePreviewLayerView:YES completion:nil];
 }
 
