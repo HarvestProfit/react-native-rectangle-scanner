@@ -11,12 +11,12 @@
 
 @interface RNRectangleScannerView : RectangleDetectionController
 
-@property (nonatomic, copy) RCTBubblingEventBlock onDeviceSetup;
-@property (nonatomic, copy) RCTBubblingEventBlock onTorchChanged;
-@property (nonatomic, copy) RCTBubblingEventBlock onPictureTaken;
-@property (nonatomic, copy) RCTBubblingEventBlock onPictureProcessed;
-@property (nonatomic, copy) RCTBubblingEventBlock onErrorProcessingImage;
-@property (nonatomic, copy) RCTBubblingEventBlock onRectangleDetected;
+@property (nonatomic, copy) RCTDirectEventBlock onDeviceSetup;
+@property (nonatomic, copy) RCTDirectEventBlock onTorchChanged;
+@property (nonatomic, copy) RCTDirectEventBlock onPictureTaken;
+@property (nonatomic, copy) RCTDirectEventBlock onPictureProcessed;
+@property (nonatomic, copy) RCTDirectEventBlock onErrorProcessingImage;
+@property (nonatomic, copy) RCTDirectEventBlock onRectangleDetected;
 
 @property (nonatomic, assign) float capturedQuality;
 
