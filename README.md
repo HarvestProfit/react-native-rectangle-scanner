@@ -102,6 +102,7 @@ This package works on a simulator. Android has a pretty cool VR world that emula
 | Prop                        | Default |   Type    | Description                                                |
 | :-------------------------- | :-----: | :-------: | :--------------------------------------------------------- |
 | filterId                    | `none`  | `integer` | The id of the filter to use. [See More](#filters)                  |
+| cameraId                    | `none`  | `integer` | The id of the camera to use. [See More](#cameras)                  |
 | enableTorch                 | `false` |  `bool`   | If the flashlight should be turned on                      |
 | capturedQuality             |  `0.5`  |  `float`  | The jpeg quality of the output images                      |
 | onTorchChanged              | `null`  |  `func`   | Called when the system changes the flash state |
@@ -147,7 +148,19 @@ NOTE: There is no UI changes when you capture an image. No screen flash, only a 
 
 **NOTE**: captured images are stored in the app's cache directory under the `CACHE_FOLDER_NAME`. This allows you to clear the cached images when you are done. (This is advised although these may get deleted by the system.)
 
-**NOTE**: on iOS, it will try to correct the rotation of the image. If you are in portrait mode, but the phone is rotated to landscape, it will rotate the captured image automatically. 
+**NOTE**: on iOS, it will try to correct the rotation of the image. If you are in portrait mode, but the phone is rotated to landscape, it will rotate the captured image automatically.
+
+### Cameras
+This packages supports using different camera types. Currently there is support for at least 2 camera types (Front and Back) with the potential to support additional (Telephoto and UltraWide). The default is the generic back camera. The supported camera types will be returned in the `onDeviceSetup({ supportedCameras })` callback. **NOTE**: On iOS you can switch the camera without unmounting the component, on Android, you need to unmount and remount the component(I'm hoping to find a fix for this).
+
+Camera devices. You can import this list via `import { POSSIBLE_CAMERA_TYPES } from 'react-native-rectangle-scanner'` or individually by the names below.
+
+| ID | Name       | Import Name                |
+| -- | ---------- | -------------------------- |
+| 1  | Back       | `BACK_FACING_CAMERA_TYPE`  |
+| 2  | Front      | `FRONT_FACING_CAMERA_TYPE` |
+| 3  | Telephoto  | `TELEPHOTO_CAMERA_TYPE`    |
+| 4  | UltraWide  | `ULTRA_WIDE_CAMERA_TYPE`   |
 
 ### Filters
 Instead of allowing you to customize the contrast, saturation, etc of the image, I prebuilt the filters. This is because the filter controls are massively different between platforms and changing those values results in much different image outputs. Below are the avilable filters. Honestly, the color controls where pretty bad on android, so the best ones for android are probably just using the Color and Black & White instead of showing all 4 (they are only slightly better than Greyscale and the original photo).

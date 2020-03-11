@@ -40,6 +40,11 @@ RCT_EXPORT_VIEW_PROPERTY(capturedQuality, float)
  */
 RCT_EXPORT_VIEW_PROPERTY(filterId, int)
 
+/*!
+ Determines what camera id to use. Depends on the phone type
+ */
+RCT_EXPORT_VIEW_PROPERTY(cameraId, int)
+
 
 // MARK: Life cycle Actions
 /*!

@@ -54,6 +54,9 @@ public class MainView extends FrameLayout {
     public void setFilterId(int filterId) {
         view.setFilterId(filterId);
     }
+    public void setCameraId(int cameraId) {
+        view.setCameraId(cameraId);
+    }
 
     public void startCamera() {
         view.startCamera();

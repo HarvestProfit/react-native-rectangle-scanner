@@ -20,6 +20,9 @@ import android.view.WindowManager;
 import android.content.res.Configuration;
 import android.widget.FrameLayout;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.WritableArray;
 import com.rectanglescanner.R;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
@@ -57,9 +60,16 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     protected boolean isStopped = true;
     private WritableMap deviceConfiguration = new WritableNativeMap();
     private int captureDevice = -1;
+    private int cameraId = 1;
     private boolean imageProcessorBusy = true;
 
     private static CameraDeviceController mThis;
+
+    public int getCameraId() {
+        return this.cameraId;
+    }
+
+
 
     public CameraDeviceController(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -78,6 +88,13 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     //================================================================================
     // Setters
     //================================================================================
+
+    /**
+     Sets the currently active camera
+     */
+    public void setCameraId(int cameraId) {
+        this.cameraId = cameraId;
+    }
 
     public boolean isFocused() {
         return this.mFocused;
@@ -126,8 +143,8 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
      Starts the capture session
      */
     public void startCamera() {
-      Log.d(TAG, "Starting preview");
       if (this.isStopped) {
+        Log.d(TAG, "Starting preview");
         try {
             if (!this.cameraIsSetup) {
                 setupCameraView();
@@ -190,7 +207,15 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     }
 
     /**
-     Sets the inital device configuration
+     * Sets the supported camera type ids
+     * @param supportedCameras
+     */
+    public void setDeviceConfigurationSupportedCameras(ReadableArray supportedCameras) {
+        this.deviceConfiguration.putArray("supportedCameras", supportedCameras);
+    }
+
+    /**
+     Sets the initial device configuration
      */
     public void resetDeviceConfiguration()
     {
@@ -199,6 +224,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       setDeviceConfigurationPermissionToUseCamera(false);
       setDeviceConfigurationHasCamera(false);
       setDeviceConfigurationPreviewPercentSize(1.0, 1.0);
+      setDeviceConfigurationSupportedCameras(Arguments.createArray());
     }
 
     /**
@@ -214,8 +240,11 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     // Getters
     //================================================================================
 
-    private int getCameraDevice() {
-        int cameraId = -1;
+    private void searchForAvailableCameraTypes() {
+        WritableArray availableCameras = Arguments.createArray();
+        boolean foundBackFacing = false;
+        boolean foundFrontFacing = false;
+
         // Search for the back facing camera
         // get the number of cameras
         int numberOfCameras = Camera.getNumberOfCameras();
@@ -223,11 +252,45 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         for (int i = 0; i < numberOfCameras; i++) {
             Camera.CameraInfo info = new Camera.CameraInfo();
             Camera.getCameraInfo(i, info);
-            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK && !foundBackFacing) {
+                availableCameras.pushInt(1);
+                foundBackFacing = true;
+            }
+
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT && !foundFrontFacing) {
+                availableCameras.pushInt(2);
+                foundFrontFacing = true;
+            }
+
+            if (foundBackFacing && foundFrontFacing) {
+                break;
+            }
+        }
+        setDeviceConfigurationSupportedCameras(availableCameras);
+    }
+
+    private int getCameraDevice() {
+        int cameraId = -1;
+
+
+        // Search for the back facing camera
+        // get the number of cameras
+        int numberOfCameras = Camera.getNumberOfCameras();
+        // for every camera check
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, info);
+
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK && this.getCameraId() == 1) {
                 cameraId = i;
                 break;
             }
-            cameraId = i;
+
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT && this.getCameraId() == 2) {
+                cameraId = i;
+                break;
+            }
         }
         return cameraId;
     }
@@ -418,13 +481,15 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
       this.captureDevice = getCameraDevice();
 
       try {
-          int cameraId = getCameraDevice();
+          int cameraId = this.captureDevice;
+          if (cameraId < 0) return false;
           mCamera = Camera.open(cameraId);
       } catch (RuntimeException e) {
           System.err.println(e);
           return false;
       }
       setDeviceConfigurationHasCamera(true);
+      searchForAvailableCameraTypes();
 
       PackageManager pm = mActivity.getPackageManager();
       if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {

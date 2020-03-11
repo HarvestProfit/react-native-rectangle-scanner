@@ -10,6 +10,34 @@ import {
 const RNRectangleScanner = requireNativeComponent('RNRectangleScanner');
 const CameraManager = NativeModules.RNRectangleScannerManager || {};
 
+export const BACK_FACING_CAMERA_TYPE = {
+  id: 1,
+  name: 'Back',
+};
+
+export const FRONT_FACING_CAMERA_TYPE = {
+  id: 2,
+  name: 'Front',
+};
+
+export const TELEPHOTO_CAMERA_TYPE = {
+  id: 3,
+  name: 'Telephoto',
+};
+
+export const ULTRA_WIDE_CAMERA_TYPE = {
+  id: 4,
+  name: 'UltraWide',
+};
+
+export const DEFAULT_CAMERA_TYPE = BACK_FACING_CAMERA_TYPE;
+export const POSSIBLE_CAMERA_TYPES = [
+  BACK_FACING_CAMERA_TYPE,
+  FRONT_FACING_CAMERA_TYPE,
+  TELEPHOTO_CAMERA_TYPE,
+  ULTRA_WIDE_CAMERA_TYPE,
+];
+
 class Scanner extends React.Component {
   static propTypes = {
     onPictureTaken: PropTypes.func,
@@ -29,10 +57,6 @@ class Scanner extends React.Component {
     onRectangleDetected: null,
     onErrorProcessingImage: null,
     capturedQuality: 0.5,
-  }
-
-  constructor(props) {
-    super(props);
   }
 
   componentDidMount() {

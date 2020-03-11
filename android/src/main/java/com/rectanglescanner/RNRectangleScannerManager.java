@@ -48,6 +48,11 @@ public class RNRectangleScannerManager extends ViewGroupManager<MainView> {
         view.setFilterId(filterId);
     }
 
+    @ReactProp(name = "cameraId", defaultInt = 1)
+    public void setCameraId(MainView view, int cameraId) {
+        view.setCameraId(cameraId);
+    }
+
     // Life cycle Events
     @Override
     public @Nullable Map getExportedCustomDirectEventTypeConstants() {

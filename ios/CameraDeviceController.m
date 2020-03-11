@@ -175,6 +175,20 @@ Represents the input from the camera device
 }
 
 /*!
+ Sets the currently active camera
+ */
+- (void)setCameraId:(int)cameraId
+{
+  _cameraId = cameraId;
+  if(self._cameraIsSetup) {
+    self._cameraIsSetup = FALSE;
+    [self stop];
+    [self setupCameraView];
+    [self start];
+  }
+}
+
+/*!
  Sets the device configuration flash setting
  */
 - (void)_setDeviceConfigurationFlashAvailable: (BOOL) isAvailable{
@@ -196,6 +210,18 @@ Represents the input from the camera device
 }
 
 /*!
+ Sets the device configuration supported cameras
+ */
+- (void)_setDeviceConfigurationSupportedCameras {
+    NSMutableArray *supportedCameras = [NSMutableArray array];
+    if ([self getDefaultBackFacingCamera]) [supportedCameras addObject:@(1)];
+    if ([self getFrontFacingCamera]) [supportedCameras addObject:@(2)];
+    if ([self getTelephotoBackFacingCamera]) [supportedCameras addObject:@(3)];
+    if ([self getUltraWideAngleBackFacingCamera]) [supportedCameras addObject:@(4)];
+    [_deviceConfiguration setValue: supportedCameras forKey: @"supportedCameras"];
+}
+
+/*!
  Sets the inital device configuration
  */
 - (void)_resetDeviceConfiguration
@@ -206,6 +232,7 @@ Represents the input from the camera device
   [self _setDeviceConfigurationHasCamera:NO];
   [_deviceConfiguration setValue: @1.0 forKey: @"previewHeightPercent"];
   [_deviceConfiguration setValue: @1.0 forKey: @"previewWidthPercent"];
+  [_deviceConfiguration setValue: @[] forKey: @"supportedCameras"];
 }
 
 /*!
@@ -301,6 +328,49 @@ Represents the input from the camera device
     }
 }
 
+/*!
+ Searches for a generic wide angle camera on the back of the phone
+ */
+- (AVCaptureDevice *)getDefaultBackFacingCamera{
+    AVCaptureDevice* possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+
+    if (possibleDevice) return possibleDevice;
+    return nil;
+}
+
+/*!
+Searches for a generic wide angle camera on the front of the phone
+*/
+- (AVCaptureDevice *)getFrontFacingCamera{
+    AVCaptureDevice* possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
+
+    if (possibleDevice) return possibleDevice;
+    return nil;
+}
+
+/*!
+ Searches for the ultra wide angle camera on the back of the phone
+ @note This may need to be refactored to actually find the desired camera
+*/
+- (AVCaptureDevice *)getUltraWideAngleBackFacingCamera{
+    if (@available(iOS 13.0, *)) {
+    AVCaptureDevice* possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInUltraWideCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+
+    if (possibleDevice) return possibleDevice;
+    }
+    return nil;
+}
+
+/*!
+ Searches for the telephoto camera on the back of the phone
+ @note This may need to be refactored to actually find the desired camera
+*/
+- (AVCaptureDevice *)getTelephotoBackFacingCamera{
+    AVCaptureDevice* possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInTelephotoCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+
+    if (possibleDevice) return possibleDevice;
+    return nil;
+}
 
 /*!
  Gets a hardware camera device.
@@ -308,7 +378,23 @@ Represents the input from the camera device
  */
 - (AVCaptureDevice *)getCameraDevice{
   AVCaptureDevice* possibleDevice;
-  possibleDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+
+  switch (self.cameraId) {
+    case 1:
+      possibleDevice = [self getDefaultBackFacingCamera];
+      break;
+    case 2:
+      possibleDevice = [self getFrontFacingCamera];
+      break;
+    case 3:
+      possibleDevice = [self getTelephotoBackFacingCamera];
+      break;
+    case 4:
+      possibleDevice = [self getUltraWideAngleBackFacingCamera];
+      break;
+    default:
+      possibleDevice = [self getDefaultBackFacingCamera];
+  }
   if (possibleDevice) return possibleDevice;
 
   return nil;
@@ -395,6 +481,7 @@ Represents the input from the camera device
   if (!self.captureDevice) return nil;
   [self _setDeviceConfigurationHasCamera:YES];
   [self _setDeviceConfigurationFlashAvailable:([self.captureDevice hasTorch] && [self.captureDevice hasFlash])];
+  [self _setDeviceConfigurationSupportedCameras];
 
   // Setup camera focus mode
   if ([self.captureDevice isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus])
