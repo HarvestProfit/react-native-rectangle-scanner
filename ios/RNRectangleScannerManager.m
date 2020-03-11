@@ -82,32 +82,32 @@ RCT_EXPORT_METHOD(capture) {
 /*!
  Called when the device is setup, the event contains information about permissions and camera capabilities
  */
-RCT_EXPORT_VIEW_PROPERTY(onDeviceSetup, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onDeviceSetup, RCTDirectEventBlock)
 
 /*!
  Called when the frame is captured.  This is before any processing and is only available in memory.
  */
-RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onPictureTaken, RCTDirectEventBlock)
 
 /*!
  Called when the captured frame is processed and saved to the temp file directory.
  */
-RCT_EXPORT_VIEW_PROPERTY(onPictureProcessed, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onPictureProcessed, RCTDirectEventBlock)
 
 /*!
  Called when a rectangle is detected
  */
-RCT_EXPORT_VIEW_PROPERTY(onErrorProcessingImage, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onErrorProcessingImage, RCTDirectEventBlock)
 
 /*!
  Called when a rectangle is detected
  */
-RCT_EXPORT_VIEW_PROPERTY(onRectangleDetected, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onRectangleDetected, RCTDirectEventBlock)
 
 /*!
  Called when the flash is turned off or on
  */
-RCT_EXPORT_VIEW_PROPERTY(onTorchChanged, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onTorchChanged, RCTDirectEventBlock)
 
 - (UIView*) view {
   _scannerView = [[RNRectangleScannerView alloc] init];
