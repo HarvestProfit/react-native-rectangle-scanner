@@ -44,7 +44,6 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
     protected final boolean mBugRotate = false;
-    protected boolean mFocused;
     protected boolean safeToTakePicture;
     protected Activity mActivity;
     private PictureCallback pCallback;
@@ -79,11 +78,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     //================================================================================
     // Setters
     //================================================================================
-
-    public boolean isFocused() {
-        return this.mFocused;
-    }
-
+    
     /**
      Toggles the flash on the camera device
      */
