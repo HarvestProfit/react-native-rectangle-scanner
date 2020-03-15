@@ -58,6 +58,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     private WritableMap deviceConfiguration = new WritableNativeMap();
     private int captureDevice = -1;
     private boolean imageProcessorBusy = true;
+    private boolean cameraRequiresManualAutoFocus = false;
 
     private static CameraDeviceController mThis;
 
@@ -317,25 +318,10 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
       } else if (param.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
         param.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        cameraRequiresManualAutoFocus = true;
       }
 
       mCamera.setDisplayOrientation(getScreenRotationOnPhone());
-
-      try {
-          mCamera.setAutoFocusMoveCallback(new Camera.AutoFocusMoveCallback() {
-              @Override
-              public void onAutoFocusMoving(boolean start, Camera camera) {
-                  mFocused = !start;
-                  Log.d(TAG, "focusMoving: " + mFocused);
-              }
-          });
-      } catch (Exception e) {
-          Log.d(TAG, "failed setting AutoFocusMoveCallback");
-      }
-
-      // some devices doesn't call the AutoFocusMoveCallback - fake the
-      // focus to true at the start
-      mFocused = true;
 
       Display display = mActivity.getWindowManager().getDefaultDisplay();
       android.graphics.Point size = new android.graphics.Point();
@@ -445,7 +431,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
           this.safeToTakePicture = false;
 
           try {
-              if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)) {
+            if (cameraRequiresManualAutoFocus) {
                   mCamera.autoFocus(new Camera.AutoFocusCallback() {
                       @Override
                       public void onAutoFocus(boolean success, Camera camera) {
@@ -487,7 +473,6 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
 
         Mat mat = new Mat(new Size(pictureSize.width, pictureSize.height), CvType.CV_8U);
         mat.put(0, 0, data);
-        camera.cancelAutoFocus();
         handleCapturedImage(mat);
     }
     public void handleCapturedImage(Mat capturedImage) {}
@@ -551,14 +536,10 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
 
     private void makeShutterSound() {
         AudioManager audio = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
-        switch (audio.getRingerMode()) {
-            case AudioManager.RINGER_MODE_NORMAL:
-                MediaActionSound sound = new MediaActionSound();
-                sound.play(MediaActionSound.SHUTTER_CLICK);
-                break;
-            case AudioManager.RINGER_MODE_SILENT:
-            case AudioManager.RINGER_MODE_VIBRATE:
-                break;
+
+        if (AudioManager.RINGER_MODE_NORMAL) {
+          MediaActionSound sound = new MediaActionSound();
+          sound.play(MediaActionSound.SHUTTER_CLICK);
         }
     }
 
