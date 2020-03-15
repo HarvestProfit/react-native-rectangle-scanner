@@ -22,6 +22,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
+import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -108,8 +109,7 @@ public class ImageProcessor extends Handler {
         Size srcSize = inputRgba.size();
         this.lastDetectedRectangle = getQuadrilateral(contours, srcSize);
         Bundle data = new Bundle();
-        boolean focused = mMainActivity.isFocused();
-        if (focused && this.lastDetectedRectangle != null) {
+        if (this.lastDetectedRectangle != null) {
           Bundle quadMap = this.lastDetectedRectangle.toBundle();
           data.putBundle("detectedRectangle", quadMap);
         } else {
@@ -151,25 +151,40 @@ public class ImageProcessor extends Handler {
         int width = Double.valueOf(srcSize.width).intValue();
         Size size = new Size(width, height);
 
+        double areaOfPreview = height * width;
+        double largestContourArea = 0;
+        Point[] bestFittingPoints = null;
+        MatOfPoint bestFittingContour = null;
         Log.i(TAG, "Size----->" + size);
         for (MatOfPoint c : contours) {
+            double contourArea = Imgproc.contourArea(c);
+            double minArea = size.area() * 0.01;
+
+            // Only allow shapes that have an area of at least 1% of the preview size
+            if (contourArea < minArea) {
+                continue;
+            }
+
             MatOfPoint2f c2f = new MatOfPoint2f(c.toArray());
             double peri = Imgproc.arcLength(c2f, true);
             MatOfPoint2f approx = new MatOfPoint2f();
             Imgproc.approxPolyDP(c2f, approx, 0.02 * peri, true);
-
-            Point[] points = approx.toArray();
-
-            // select biggest 4 angles polygon
-            // if (points.length == 4) {
-            Point[] foundPoints = sortPoints(points);
-
-            if (insideArea(foundPoints, size)) {
-
-                return new Quadrilateral(c, foundPoints, new Size(srcSize.width, srcSize.height));
+            Point[] foundPoints = sortPoints(approx.toArray());
+            if (isValidRectangle(foundPoints) && contourArea > largestContourArea) {
+              largestContourArea = contourArea;
+              bestFittingPoints = foundPoints;
+              bestFittingContour = c;
             }
-            // }
+
+            if (largestContourArea > areaOfPreview * 0.7) {
+              break;
+            }
         }
+
+        if (bestFittingContour != null) {
+          return new Quadrilateral(bestFittingContour, bestFittingPoints, new Size(srcSize.width, srcSize.height));
+        }
+
 
         return null;
     }
@@ -210,28 +225,39 @@ public class ImageProcessor extends Handler {
         return result;
     }
 
-    private boolean insideArea(Point[] rp, Size size) {
-
-        int width = Double.valueOf(size.width).intValue();
-        int height = Double.valueOf(size.height).intValue();
-
-        int minimumSize = width / 10;
-
+    private boolean isValidRectangle(Point[] rp) {
         boolean isANormalShape = rp[0].x != rp[1].x && rp[1].y != rp[0].y && rp[2].y != rp[3].y && rp[3].x != rp[2].x;
-        boolean isBigEnough = ((rp[1].x - rp[0].x >= minimumSize) && (rp[2].x - rp[3].x >= minimumSize)
-                && (rp[3].y - rp[0].y >= minimumSize) && (rp[2].y - rp[1].y >= minimumSize));
+        if (!isANormalShape) {
+            return false;
+        }
 
-        double leftOffset = rp[0].x - rp[3].x;
-        double rightOffset = rp[1].x - rp[2].x;
-        double bottomOffset = rp[0].y - rp[1].y;
-        double topOffset = rp[2].y - rp[3].y;
+        double leftOffset = Math.abs(rp[0].x - rp[3].x);
+        double rightOffset = Math.abs(rp[1].x - rp[2].x);
+        double bottomOffset = Math.abs(rp[0].y - rp[1].y);
+        double topOffset = Math.abs(rp[2].y - rp[3].y);
 
-        boolean isAnActualRectangle = ((leftOffset <= minimumSize && leftOffset >= -minimumSize)
-                && (rightOffset <= minimumSize && rightOffset >= -minimumSize)
-                && (bottomOffset <= minimumSize && bottomOffset >= -minimumSize)
-                && (topOffset <= minimumSize && topOffset >= -minimumSize));
+        double largestVertical = Math.max(leftOffset, rightOffset);
+        double verticalOffset = Math.abs(leftOffset - rightOffset);
+        double largestHorizontal = Math.max(topOffset, bottomOffset);
+        double horizontalOffset = Math.abs(topOffset - bottomOffset);
+        double largestSide = Math.max(largestHorizontal, largestVertical);
+        double sideOffset = Math.abs(largestHorizontal - largestVertical);
 
-        return isANormalShape && isAnActualRectangle && isBigEnough;
+        // Ensure vertical sides are within 90% of each other
+        if (verticalOffset > (largestVertical * 0.9)) {
+            return false;
+        }
+
+        // Ensure horizontal sides are within 90% of each other
+        if (horizontalOffset > (largestHorizontal * 0.9)) {
+            return false;
+        }
+
+        // Ensure all sides are within 99.5% of each other
+//        if (sideOffset > (largestSide * 0.995)) {
+//            return false;
+//        }
+        return true;
     }
 
     private Mat fourPointTransform(Mat src, Point[] pts) {
