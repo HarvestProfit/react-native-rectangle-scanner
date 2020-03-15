@@ -537,7 +537,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     private void makeShutterSound() {
         AudioManager audio = (AudioManager) mActivity.getSystemService(Context.AUDIO_SERVICE);
 
-        if (AudioManager.RINGER_MODE_NORMAL) {
+        if (audio.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
           MediaActionSound sound = new MediaActionSound();
           sound.play(MediaActionSound.SHUTTER_CLICK);
         }
