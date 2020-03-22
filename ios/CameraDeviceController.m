@@ -148,7 +148,7 @@ Represents the input from the camera device
     self._isStopped = NO;
     dispatch_queue_t globalQueue =  dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
     dispatch_async(globalQueue, ^{
-      [self.captureSession startRunning];  
+      [self.captureSession startRunning];
     });
     [self hidePreviewLayerView:NO completion:nil];
 }
@@ -161,9 +161,18 @@ Represents the input from the camera device
     self._isStopped = YES;
     dispatch_queue_t globalQueue =  dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
     dispatch_async(globalQueue, ^{
-      [self.captureSession stopRunning];  
+      [self.captureSession stopRunning];
     });
     [self hidePreviewLayerView:YES completion:nil];
+}
+
+/*!
+ Focuses the camera. This is a NoOp as iOS always continuously autofocuses. This can be used to later expand into
+ focusing onto a specific point.
+ */
+- (void)focusCamera
+{
+    // NOOP
 }
 
 /*!

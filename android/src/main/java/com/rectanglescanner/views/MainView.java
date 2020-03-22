@@ -71,6 +71,9 @@ public class MainView extends FrameLayout {
         view.capture();
     }
 
+    public void focusCamera() {
+      view.focusCamera();
+    }
 
     public void deviceWasSetup(WritableMap config) {
       final ReactContext context = (ReactContext) getContext();

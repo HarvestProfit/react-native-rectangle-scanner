@@ -78,7 +78,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     //================================================================================
     // Setters
     //================================================================================
-    
+
     /**
      Toggles the flash on the camera device
      */
@@ -154,6 +154,14 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
             Log.d(TAG, "Error stopping preview: " + e);
         }
       }
+    }
+
+    /**
+    Tell the camera to focus
+    */
+    public void focusCamera() {
+      Log.d(TAG, "Autofocusing");
+      mCamera.autoFocus(null);
     }
 
     /**

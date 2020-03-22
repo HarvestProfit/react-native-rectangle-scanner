@@ -14,6 +14,7 @@
 
 - (void)start;
 - (void)stop;
+- (void)focusCamera;
 
 @property (nonatomic,assign,getter=isTorchEnabled) BOOL enableTorch;
 
