@@ -108,8 +108,7 @@ public class ImageProcessor extends Handler {
         Size srcSize = inputRgba.size();
         this.lastDetectedRectangle = getQuadrilateral(contours, srcSize);
         Bundle data = new Bundle();
-        boolean focused = mMainActivity.isFocused();
-        if (focused && this.lastDetectedRectangle != null) {
+        if (this.lastDetectedRectangle != null) {
           Bundle quadMap = this.lastDetectedRectangle.toBundle();
           data.putBundle("detectedRectangle", quadMap);
         } else {

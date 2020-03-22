@@ -131,6 +131,9 @@ class Scanner extends React.Component {
   // eslint-disable-next-line
   refresh() { CameraManager.refresh(); }
 
+  // eslint-disable-next-line
+  focus() { CameraManager.focus(); }
+
   render() {
     return (
       <RNRectangleScanner

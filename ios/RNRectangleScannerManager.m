@@ -57,6 +57,13 @@ RCT_EXPORT_METHOD(stop) {
 }
 
 /*!
+ focuses the camera
+ */
+RCT_EXPORT_METHOD(focusCamera) {
+  [_scannerView focusCamera];
+}
+
+/*!
  Cleans up any extra running camera stuff
  */
 RCT_EXPORT_METHOD(cleanup) {
