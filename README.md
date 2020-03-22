@@ -1,7 +1,7 @@
 ![Demo gif](images/demo.gif)
 # `react-native-rectangle-scanner`
 
-![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
+[![npm](https://img.shields.io/npm/v/react-native-rectangle-scanner.svg)](https://www.npmjs.com/package/react-native-rectangle-scanner) ![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
 
 Live photo rectangle detection library useful for scanning documents. On capture, it returns the URIs for the original and a cropped version of the image allowing you to use the images as you want. You can additionally apply filters to adjust the visibility of text on the image (similar to the iOS document scanner filters).
 
