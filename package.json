@@ -1,6 +1,6 @@
 {
   "name": "react-native-rectangle-scanner",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Scan documents, automatic border detection, automatic crop, image filters",
   "main": "index.js",
   "files": [
