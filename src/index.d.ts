@@ -41,6 +41,13 @@ declare module 'react-native-rectangle-scanner' {
     name: string
   }
 
+  export interface AndroidPermissionObject {
+    title: string,
+    message: string,
+    buttonNegative: string,
+    buttonPositive: string,
+  }
+
   export interface ScannerComponentProps extends ViewProps {
     onPictureTaken?: (args: PictureCallbackProps) => void,
     onPictureProcessed?: (args: PictureCallbackProps) => void,
@@ -52,6 +59,7 @@ declare module 'react-native-rectangle-scanner' {
     enableTorch?: boolean,
     capturedQuality?: number,
     styles?: object,
+    androidPermission?: AndroidPermissionObject | boolean,
   }
 
   export interface RectangleOverlayComponentProps extends ViewProps {

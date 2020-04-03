@@ -111,6 +111,7 @@ This package works on a simulator. Android has a pretty cool VR world that emula
 | styles                      | `null`  |  `object` | Styles the camera view (works best on fullscreen/flex: 1). |
 | onErrorProcessingImage      | `null`  | `func`    | Called if there was an error capturing the image. Includes a `message` and the paths it was trying to save if the error was failing to save the image. |
 | onDeviceSetup               | `null`  | `func`    | Called after the system sets up the camera allowing you to configure the view for different device setups. |
+| androidPermission           | `null`  | `object or false`  | ANDROID ONLY: Allows specifying the permission object on android or disabling entirely (pass `false`). |
 
 
 ### onDeviceSetup
