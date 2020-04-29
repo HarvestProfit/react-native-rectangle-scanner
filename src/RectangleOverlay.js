@@ -1,6 +1,6 @@
 import { PropTypes } from 'prop-types';
 import React, { Component } from 'react';
-import { Dimensions, View } from 'react-native';
+import { Dimensions, View, Platform } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
 
 function getDifferenceBetweenRectangles(firstRectangle, secondRectangle) {
@@ -162,7 +162,7 @@ export default class RectangleOverlay extends Component {
     }
 
     return (
-      <View style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: 0, backgroundColor: 'rgba(0,0,0,0)' }}>
+      <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 0 : -10, bottom: 0, right: 0, left: 0, backgroundColor: 'rgba(0,0,0,0)' }}>
         <Svg height={deviceWindow.height * previewRatio.height} width={deviceWindow.width * previewRatio.width} viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}>
           <Path
             d={d}
