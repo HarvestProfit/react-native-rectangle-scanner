@@ -40,6 +40,11 @@ cd ios && pod install && cd ..
 
 **NOTE**: you need to be targeting iOS 10 or greater.  Your pod file may need `platform :ios, '10.0'` at the top
 
+#### Info.plist
+Add Camera permissions request:
+
+Add the `NSCameraUsageDescription` tag, otherwise you will only see a black screen and no camera. iOS needs to know why you want to use the camera.
+
 ### Android Only
 
 If you do not have it already in your project, you must link openCV in your `settings.gradle` file
