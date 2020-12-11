@@ -244,7 +244,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         Camera.Size bestSize = null;
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long availableMemory = Runtime.getRuntime().maxMemory() - used;
-        for (Camera.Size currentSize : sizes) {
+        for (Camera.Size currentSize : resolutionList) {
             int newArea = currentSize.width * currentSize.height;
             long neededMemory = newArea * 4 * 4; // newArea * 4 Bytes/pixel * 4 needed copies of the bitmap (for safety :) )
             boolean isDesiredRatio = (currentSize.width / 4) == (currentSize.height / 3);
@@ -255,7 +255,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
             }
         }
         if (bestSize == null) {
-            return sizes.get(0);
+            return resolutionList.get(0);
         }
         return bestSize;
     }
