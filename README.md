@@ -1,10 +1,10 @@
-## Changes from the forked repository
+# Changes from the forked repository
 
-# Preview/Image Aspect Ratio
+## Preview/Image Aspect Ratio
 
 The camera preview and the image produce by taking a photo were different sizes for me on some devices. I modified the CameraDeviceController.getOptimalResolution function so that a consistent size was picked. Works great for me so far.
 
-# Rectangle Overlay takes no margins
+## Rectangle Overlay takes no margins
 
 The example code for this project was lining up the content of the camera with the rectangle overlay after margins were applied. This is because the RectangleOverlay is always absolutely positioned at 0,0,0,0 regardless of whether the preview has had margins apllied to it. I add the ability to pass the margin values to the RectangleOverlay so that the two elements lined up correctly.
 
