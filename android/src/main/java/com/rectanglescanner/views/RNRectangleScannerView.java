@@ -135,11 +135,15 @@ public class RNRectangleScannerView extends RectangleDetectionController {
         pictureDidFailToProcess(folderError);
         return;
       }
-
       pictureWasTakenConfig.putString("croppedImage", "file://" + croppedImageFileName);
       pictureWasTakenConfig.putString("initialImage", "file://" + originalImageFileName);
+      pictureWasTakenConfig.putInt("height", capturedImage.heightWithRatio);
+      pictureWasTakenConfig.putInt("width", capturedImage.widthWithRatio);
+
       pictureWasProcessedConfig.putString("croppedImage", "file://" + croppedImageFileName);
       pictureWasProcessedConfig.putString("initialImage", "file://" + originalImageFileName);
+      pictureWasProcessedConfig.putInt("height", capturedImage.heightWithRatio);
+      pictureWasProcessedConfig.putInt("width", capturedImage.widthWithRatio);
       pictureWasTaken(pictureWasTakenConfig);
 
       if (hasCroppedImage && !this.saveToDirectory(capturedImage.processed, croppedImageFileName)) {
