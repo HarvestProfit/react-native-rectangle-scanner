@@ -142,9 +142,11 @@ public class ImageProcessor extends Handler {
         Core.flip(capturedImage.t(), capturedImage, 0);
         CapturedImage sd = new CapturedImage(capturedImage);
 
+        
         sd.originalSize = capturedImage.size();
-        sd.heightWithRatio = Double.valueOf(sd.originalSize.width).intValue();
-        sd.widthWithRatio = Double.valueOf(sd.originalSize.height).intValue();
+        double ratio = sd.originalSize.height / 500;
+        sd.heightWithRatio = Double.valueOf(sd.originalSize.width / ratio).intValue();
+        sd.widthWithRatio = Double.valueOf(sd.originalSize.height / ratio).intValue();
         return sd.setProcessed(doc);
     }
 
