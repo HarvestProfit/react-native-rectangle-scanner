@@ -1,15 +1,25 @@
-apply plugin: 'com.android.library'
-
-def safeExtGet(prop, fallback) {
-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url "$rootDir/../node_modules/react-native/android"
+        }
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.3.1")
+    }
 }
 
+apply plugin: 'com.android.library'
+
 android {
-    compileSdkVersion safeExtGet("compileSdkVersion", 28)
+    compileSdkVersion 33
 
     defaultConfig {
-        minSdkVersion safeExtGet('minSdkVersion', 16)
-        targetSdkVersion safeExtGet('targetSdkVersion', 28)
+        minSdkVersion 16
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         ndk {
@@ -18,7 +28,11 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
-    implementation project(':openCVLibrary310')
+    implementation 'org.opencv:opencv:4.9.0'
     implementation 'com.facebook.react:react-native:+'
 }

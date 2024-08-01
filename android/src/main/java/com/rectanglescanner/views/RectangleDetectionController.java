@@ -12,13 +12,10 @@ import android.widget.FrameLayout;
 
 import com.rectanglescanner.R;
 import com.rectanglescanner.helpers.ImageProcessor;
-import com.rectanglescanner.helpers.CustomOpenCVLoader;
 import com.rectanglescanner.helpers.ImageProcessorMessage;
 import com.rectanglescanner.helpers.CapturedImage;
 import com.facebook.react.bridge.WritableMap;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
@@ -71,22 +68,11 @@ public class RectangleDetectionController extends CameraDeviceController {
             display.getRealSize(size);
         }
 
-        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(context) {
-            @Override
-            public void onManagerConnected(int status) {
-                if (status == LoaderCallbackInterface.SUCCESS) {
-                    Log.d(TAG, "SUCCESS init OpenCV: " + status);
-                } else {
-                    Log.d(TAG, "ERROR init OpenCV: " + status);
-                    super.onManagerConnected(status);
-                }
-            }
-        };
-
-        if (!OpenCVLoader.initDebug()) {
-            CustomOpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, context, mLoaderCallback);
+        if (OpenCVLoader.initLocal()) {
+            Log.i(TAG, "OpenCV loaded successfully");
         } else {
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+            Log.e(TAG, "OpenCV initialization failed!");
+            return;
         }
 
         if (mImageThread == null) {
