@@ -18,10 +18,14 @@ import android.view.Surface;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Range;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -150,26 +154,27 @@ public class ImageProcessor extends Handler {
         int width = Double.valueOf(srcSize.width).intValue();
         Size size = new Size(width, height);
 
+        double areaOfPreview = height * width;
+        double minArea = size.area() * 0.01;
+        MatOfPoint bestFittingContour = null;
+
         Log.i(TAG, "Size----->" + size);
         for (MatOfPoint c : contours) {
+            double contourArea = Imgproc.contourArea(c);
+
+            if (contourArea < minArea) {
+                continue;
+            }
+
             MatOfPoint2f c2f = new MatOfPoint2f(c.toArray());
             double peri = Imgproc.arcLength(c2f, true);
             MatOfPoint2f approx = new MatOfPoint2f();
             Imgproc.approxPolyDP(c2f, approx, 0.02 * peri, true);
-
-            Point[] points = approx.toArray();
-
-            // select biggest 4 angles polygon
-            // if (points.length == 4) {
-            Point[] foundPoints = sortPoints(points);
-
-            if (insideArea(foundPoints, size)) {
-
-                return new Quadrilateral(c, foundPoints, new Size(srcSize.width, srcSize.height));
+            Point[] foundPoints = sortPoints(approx.toArray());
+            if (isValidRectangle(foundPoints)) {
+              return new Quadrilateral(c, foundPoints, new Size(srcSize.width, srcSize.height));
             }
-            // }
         }
-
         return null;
     }
 
@@ -209,28 +214,36 @@ public class ImageProcessor extends Handler {
         return result;
     }
 
-    private boolean insideArea(Point[] rp, Size size) {
-
-        int width = Double.valueOf(size.width).intValue();
-        int height = Double.valueOf(size.height).intValue();
-
-        int minimumSize = width / 10;
-
+    private boolean isValidRectangle(Point[] rp) {
         boolean isANormalShape = rp[0].x != rp[1].x && rp[1].y != rp[0].y && rp[2].y != rp[3].y && rp[3].x != rp[2].x;
-        boolean isBigEnough = ((rp[1].x - rp[0].x >= minimumSize) && (rp[2].x - rp[3].x >= minimumSize)
-                && (rp[3].y - rp[0].y >= minimumSize) && (rp[2].y - rp[1].y >= minimumSize));
+        if (!isANormalShape) {
+            return false;
+        }
 
-        double leftOffset = rp[0].x - rp[3].x;
-        double rightOffset = rp[1].x - rp[2].x;
-        double bottomOffset = rp[0].y - rp[1].y;
-        double topOffset = rp[2].y - rp[3].y;
+        double leftOffset = Math.abs(rp[0].x - rp[3].x);
+        double rightOffset = Math.abs(rp[1].x - rp[2].x);
+        double bottomOffset = Math.abs(rp[0].y - rp[1].y);
+        double topOffset = Math.abs(rp[2].y - rp[3].y);
 
-        boolean isAnActualRectangle = ((leftOffset <= minimumSize && leftOffset >= -minimumSize)
-                && (rightOffset <= minimumSize && rightOffset >= -minimumSize)
-                && (bottomOffset <= minimumSize && bottomOffset >= -minimumSize)
-                && (topOffset <= minimumSize && topOffset >= -minimumSize));
+        double largestVertical = Math.max(leftOffset, rightOffset);
+        double verticalOffset = Math.abs(leftOffset - rightOffset);
+        double largestHorizontal = Math.max(topOffset, bottomOffset);
+        double horizontalOffset = Math.abs(topOffset - bottomOffset);
+        double largestSide = Math.max(largestHorizontal, largestVertical);
+        double sideOffset = Math.abs(largestHorizontal - largestVertical);
 
-        return isANormalShape && isAnActualRectangle && isBigEnough;
+        if (verticalOffset > (largestVertical * 0.9)) {
+            return false;
+        }
+
+        if (horizontalOffset > (largestHorizontal * 0.9)) {
+            return false;
+        }
+
+//        if (sideOffset > (largestSide * 0.995)) {
+//            return false;
+//        }
+        return true;
     }
 
     private Mat fourPointTransform(Mat src, Point[] pts) {
@@ -268,28 +281,12 @@ public class ImageProcessor extends Handler {
     }
 
     private ArrayList<MatOfPoint> findContours(Mat src) {
-
-        Mat grayImage;
-        Mat cannedImage;
-        Mat resizedImage;
-
-        int height = Double.valueOf(src.size().height).intValue();
-        int width = Double.valueOf(src.size().width).intValue();
-        Size size = new Size(width, height);
-
-        resizedImage = new Mat(size, CvType.CV_8UC4);
-        grayImage = new Mat(size, CvType.CV_8UC4);
-        cannedImage = new Mat(size, CvType.CV_8UC1);
-
-        Imgproc.resize(src, resizedImage, size);
-        Imgproc.cvtColor(resizedImage, grayImage, Imgproc.COLOR_RGBA2GRAY, 4);
-        Imgproc.GaussianBlur(grayImage, grayImage, new Size(5, 5), 0);
-        Imgproc.Canny(grayImage, cannedImage, 80, 100, 3, false);
+        Mat cannedImage = applyCannedFilterToImage(src);
 
         ArrayList<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
 
-        Imgproc.findContours(cannedImage, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(cannedImage, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
         hierarchy.release();
 
@@ -301,8 +298,6 @@ public class ImageProcessor extends Handler {
             }
         });
 
-        resizedImage.release();
-        grayImage.release();
         cannedImage.release();
 
         return contours;
@@ -335,6 +330,20 @@ public class ImageProcessor extends Handler {
       }
     }
 
+    /**
+     * Returns the mean brightness level of the provided image
+     * @param image
+     * @return brightness level
+     */
+    public double brightnessOfImage(Mat image)
+    {
+        MatOfDouble meansrc= new MatOfDouble();
+        MatOfDouble stdsrc= new MatOfDouble();
+
+        Core.meanStdDev(image, meansrc, stdsrc);
+        return meansrc.get(0,0)[0];
+    }
+
     /*!
      Slightly enhances the black and white image
      */
@@ -349,8 +358,9 @@ public class ImageProcessor extends Handler {
      */
     public Mat applyBlackAndWhiteFilterToImage(Mat image)
     {
+      double imageBrightnessLevel = brightnessOfImage(image);
+      image.convertTo(image, -1, 2.8  - (imageBrightnessLevel * 0.0045), imageBrightnessLevel * -1.15);
       Imgproc.cvtColor(image, image, Imgproc.COLOR_RGBA2GRAY);
-      image.convertTo(image, -1, 1, 10);
       return image;
     }
 
@@ -359,8 +369,26 @@ public class ImageProcessor extends Handler {
      */
     public Mat applyColorFilterToImage(Mat image)
     {
-      image.convertTo(image, -1, 1.2, 0);
+      double imageBrightnessLevel = brightnessOfImage(image);
+      image.convertTo(image, -1, 2.8  - (imageBrightnessLevel * 0.0045), imageBrightnessLevel * -1.15);
       return image;
+    }
+
+    public Mat applyCannedFilterToImage(Mat image)
+    {
+      int blurSize = 5;
+      int thresh = 100;
+      double imageBrightnessLevel = brightnessOfImage(image);
+      Mat colorAdjustedImage = new Mat();
+      Mat cannedImage = new Mat();
+
+      image.convertTo(colorAdjustedImage, -1, 2.8  - (imageBrightnessLevel * 0.0045), imageBrightnessLevel * -1.15);
+      Imgproc.cvtColor(colorAdjustedImage, colorAdjustedImage, Imgproc.COLOR_RGBA2GRAY, 4);
+        // Imgproc.equalizeHist(colorAdjustedImage, colorAdjustedImage);
+      Imgproc.bilateralFilter(colorAdjustedImage, cannedImage, blurSize, blurSize * 2, blurSize / 2);
+      Imgproc.Canny(cannedImage, cannedImage, thresh, thresh * 3, 3, true);
+      colorAdjustedImage.release();
+      return cannedImage;
     }
 
 
