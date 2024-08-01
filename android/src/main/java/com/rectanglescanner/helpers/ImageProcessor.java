@@ -83,9 +83,9 @@ public class ImageProcessor extends Handler {
     /**
     Process a single frame from the camera video
     */
-    private void processCapturedImage(Mat picture) {
-        Mat capturedImage = Imgcodecs.imdecode(picture, Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-        picture.release();
+    private void processCapturedImage(Mat capturedImage) {
+        // Mat capturedImage = Imgcodecs.imdecode(picture, Imgcodecs.IMREAD_UNCHANGED);
+        // picture.release();
 
         Log.d(TAG, "processCapturedImage - imported image " + capturedImage.size().width + "x" + capturedImage.size().height);
 
@@ -95,7 +95,7 @@ public class ImageProcessor extends Handler {
 
         mMainActivity.onProcessedCapturedImage(doc);
         doc.release();
-        picture.release();
+        capturedImage.release();
 
         mMainActivity.setImageProcessorBusy(false);
     }
