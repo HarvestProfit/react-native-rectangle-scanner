@@ -3,6 +3,9 @@ package com.rectanglescanner.views;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.media.AudioManager;
@@ -24,6 +27,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 
 import org.opencv.android.JavaCameraView;
+import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -322,6 +326,7 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
         cameraRequiresManualAutoFocus = true;
       }
 
+      param.setPictureFormat(ImageFormat.JPEG);
       mCamera.setDisplayOrientation(getScreenRotationOnPhone());
 
       Display display = mActivity.getWindowManager().getDefaultDisplay();
@@ -470,10 +475,16 @@ public class CameraDeviceController extends JavaCameraView implements PictureCal
     public void onPictureTaken(byte[] data, Camera camera) {
         setEnableTorch(false);
         this.safeToTakePicture = true;
-        Camera.Size pictureSize = camera.getParameters().getPictureSize();
 
-        Mat mat = new Mat(new Size(pictureSize.width, pictureSize.height), CvType.CV_8U);
-        mat.put(0, 0, data);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+        Mat picture = new Mat();
+        Bitmap bmp32 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+        Utils.bitmapToMat(bmp32, picture);
+
+        Mat mat = new Mat();
+        Imgproc.cvtColor(picture, mat, Imgproc.COLOR_BGR2RGB, 4);
+
         handleCapturedImage(mat);
     }
     public void handleCapturedImage(Mat capturedImage) {}
