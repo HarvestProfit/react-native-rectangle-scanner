@@ -1,0 +1,22 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start --dev-client --clear",
+    "android": "expo run:android",
+    "ios": "rm -f ios/.xcode.env.local && expo run:ios"
+  },
+  "dependencies": {
+    "expo": "^50.0.17",
+    "expo-dev-client": "~3.3.12",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.73.6",
+    "react-native-rectangle-scanner": "file:../"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
+}
