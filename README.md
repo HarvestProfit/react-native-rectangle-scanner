@@ -1,5 +1,15 @@
-![Demo gif](images/demo.gif)
 # `react-native-rectangle-scanner`
+
+### ⚠️ Deprecation Notice ⚠️
+iOS and Android have come a long way since this package was first released. Both iOS Vision and Android Google Play Services allows you to use their built in document scanner, both are much much better than the capabilities of this package (including editing the detected boundaries).
+
+
+https://github.com/WebsiteBeaver/react-native-document-scanner-plugin is an NPM package that we switched to which supports those above mentioned native APIs and is also working well in our Expo app. 
+
+I did release one last version for this package which corrected a few minor things allowing this to work with Expo 50+ in dev client mode.
+
+
+![Demo gif](images/demo.gif)
 
 [![npm](https://img.shields.io/npm/v/react-native-rectangle-scanner.svg)](https://www.npmjs.com/package/react-native-rectangle-scanner) ![Supports Android and iOS](https://img.shields.io/badge/platforms-android%20|%20ios%20-lightgrey.svg) ![MIT License](https://img.shields.io/npm/l/@react-native-community/netinfo.svg)
 
